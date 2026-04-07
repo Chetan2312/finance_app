@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>FinanceFreedom v7</title>
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/responsive.css">
+</head>
+<body data-theme="dark">
+
+<!-- ── MODALS ─────────────────────── -->
+<div class="ovl" id="mo-sec"><div class="modal">
+  <div class="mo-t" id="mo-sec-t">➕ New Expense Section</div>
+  <div class="eg" id="eg-sec"></div>
+  <div class="fi"><label>Name</label><input id="cs-nm" placeholder="e.g. Business Expenses"></div>
+  <div class="fi"><label>Color</label><select id="cs-col"><option value="#7c73e6">Indigo</option><option value="#fb7185">Rose</option><option value="#2dd4bf">Teal</option><option value="#f59e0b">Amber</option><option value="#38bdf8">Sky</option><option value="#fb923c">Coral</option><option value="#a78bfa">Violet</option><option value="#34d399">Emerald</option></select></div>
+  <div class="mo-ft"><button class="btn bp" style="flex:1" onclick="saveSection()">Save</button><button class="btn bg" onclick="cmo()">Cancel</button></div>
+</div></div>
+
+<div class="ovl" id="mo-item"><div class="modal">
+  <div class="mo-t" id="mo-item-t">Add Item</div>
+  <div class="eg" id="eg-item"></div>
+  <div class="fi"><label>Name</label><input id="ii-nm" placeholder="e.g. Vehicle 2 EMI"></div>
+  <div class="fi"><label>Monthly Amount (₹)</label><input type="number" id="ii-amt" placeholder="0"></div>
+  <div class="mo-ft"><button class="btn bp" style="flex:1" onclick="saveItem()">Add</button><button class="btn bg" onclick="cmo()">Cancel</button></div>
+</div></div>
+
+<div class="ovl" id="mo-debt"><div class="modal">
+  <div class="mo-t" id="mo-debt-t">Add Debt</div>
+  <input type="hidden" id="d-eid">
+  <div class="fi"><label>Loan Name</label><input id="d-nm" placeholder="e.g. HDFC Home Loan"></div>
+  <div class="g2"><div class="fi"><label>Outstanding (₹)</label><input type="number" id="d-bal" placeholder="500000"></div><div class="fi"><label>Rate (% p.a.)</label><input type="number" id="d-rt" placeholder="9.5" step="0.1"></div></div>
+  <div class="g2"><div class="fi"><label>Monthly EMI (₹)</label><input type="number" id="d-emi" placeholder="12000"></div><div class="fi"><label>Type</label><select id="d-tp"><option value="home">🏠 Home Loan</option><option value="vehicle">🚗 Vehicle</option><option value="personal">💰 Personal</option><option value="credit">💳 Credit Card</option><option value="education">📚 Education</option><option value="other">🏦 Other</option></select></div></div>
+  <div class="fi"><label>Repayment Type</label><select id="d-rp" onchange="upRepHint()"><option value="emi">📉 Reducing EMI</option><option value="interest">💸 Interest-Only (full principal at closure)</option><option value="bullet">🎯 Bullet/Lump-Sum</option></select></div>
+  <div class="fi"><label>Remaining Months (optional)</label><input type="number" id="d-tn" placeholder="36"></div>
+  <div class="cb-info xxs" id="rp-hint" style="margin-bottom:.65rem">Standard reducing EMI — principal reduces monthly.</div>
+  <div class="mo-ft"><button class="btn bp" style="flex:1" onclick="saveDebt()">Save Debt</button><button class="btn bg" onclick="cmo()">Cancel</button></div>
+</div></div>
+
+<div class="ovl" id="mo-sip"><div class="modal">
+  <div class="mo-t" id="mo-sip-t">Add SIP</div>
+  <input type="hidden" id="sip-eid">
+  <div class="fi"><label>Fund Name</label><input id="sip-fn" placeholder="e.g. Mirae Asset Large Cap"></div>
+  <div class="g2"><div class="fi"><label>Monthly SIP (₹)</label><input type="number" id="sip-am" placeholder="5000"></div><div class="fi"><label>Category</label><select id="sip-ct"><option value="large">Large Cap</option><option value="index">Index Fund</option><option value="hybrid">Hybrid</option><option value="flexi">Flexi Cap</option><option value="elss">ELSS</option><option value="mid">Mid Cap</option><option value="small">Small Cap</option><option value="debt">Debt Fund</option></select></div></div>
+  <div class="g2"><div class="fi"><label>Months Done</label><input type="number" id="sip-do" placeholder="12" min="0"></div><div class="fi"><label>Total Invested (₹)</label><input type="number" id="sip-iv" placeholder="60000"></div></div>
+  <div class="g2"><div class="fi"><label>Current Value (₹)</label><input type="number" id="sip-cv" placeholder="65000"></div><div class="fi"><label>Expected Return (% p.a.)</label><input type="number" id="sip-rt" placeholder="12" step="0.5"></div></div>
+  <div class="fi"><label>Continue for (months)</label><input type="number" id="sip-pl" placeholder="60" min="1"></div>
+  <div class="mo-ft"><button class="btn bp" style="flex:1" onclick="saveSIP()">Save SIP</button><button class="btn bg" onclick="cmo()">Cancel</button></div>
+</div></div>
+
+<div class="ovl" id="mo-dcat"><div class="modal">
+  <div class="mo-t" id="mo-dcat-t">Daily Expense Category</div>
+  <input type="hidden" id="dc-eid">
+  <div class="eg" id="eg-dcat"></div>
+  <div class="fi"><label>Category Name</label><input id="dc-nm" placeholder="e.g. Morning Tea"></div>
+  <div class="fi"><label>Color</label><select id="dc-col">
+    <option value="#fb7185">Rose</option><option value="#f59e0b">Amber</option><option value="#2dd4bf">Teal</option><option value="#38bdf8">Sky</option><option value="#a78bfa">Violet</option><option value="#34d399">Emerald</option><option value="#fb923c">Coral</option><option value="#7c73e6">Indigo</option><option value="#e879f9">Fuchsia</option><option value="#4ade80">Green</option>
+  </select></div>
+  <div class="mo-ft"><button class="btn bp" style="flex:1" onclick="saveDCat()">Save Category</button><button class="btn bg" onclick="cmo()">Cancel</button></div>
+</div></div>
+
+<div class="ovl" id="mo-dex"><div class="modal">
+  <div class="mo-t" id="mo-dex-t">Edit Daily Expense</div>
+  <input type="hidden" id="dex-eid">
+  <div class="g2"><div class="fi"><label>Date</label><input type="date" id="de-dt"></div><div class="fi"><label>Category</label><select id="de-cat"></select></div></div>
+  <div class="fi"><label>Amount (₹)</label><input type="number" id="de-amt" placeholder="0" min="0"></div>
+  <div class="fi"><label>Note (optional)</label><input id="de-note" placeholder="e.g. Lunch at office"></div>
+  <div class="mo-ft"><button class="btn bp" style="flex:1" onclick="saveDexEdit()">Save</button><button class="btn bg" onclick="cmo()">Cancel</button></div>
+</div></div>
+
+<!-- ── APP ────────────────────────── -->
+<header class="hdr">
+  <div class="logo">
+    <div class="logo-mark">FinanceFreedom</div>
+    <div class="logo-sub">// WEALTH OS · v7 · 100% LOCAL</div>
+  </div>
+  <div class="hdr-r">
+    <div class="sav-badge" id="sv-badge"><span class="sav-dot"></span><span id="sv-txt">SAVED</span></div>
+    <button class="ico-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle theme">🌙</button>
+  </div>
+</header>
+
+<nav class="nav">
+  <button class="ntab on" onclick="sw('overview',this)">📊 Overview</button>
+  <button class="ntab" onclick="sw('expenses',this)">💸 Expenses</button>
+  <button class="ntab" onclick="sw('debts',this)">💳 Debts</button>
+  <button class="ntab" onclick="sw('sip',this)">📈 SIPs</button>
+  <button class="ntab" onclick="sw('invest',this)">💰 Invest</button>
+  <button class="ntab" onclick="sw('daily',this)">🗓 Daily</button>
+  <button class="ntab" onclick="sw('milestones',this)">🎯 Milestones</button>
+  <button class="ntab" onclick="sw('budget',this)">🧮 Budget</button>
+  <button class="ntab" onclick="sw('reports',this)">📋 Reports</button>
+  <button class="ntab" onclick="sw('statements',this)">🏦 Statements</button>
+  <button class="ntab" onclick="sw('ai',this)">🤖 AI</button>
+</nav>
+
+<div class="wrap">
+
+<!-- ════ OVERVIEW ════ -->
+<div id="pg-overview" class="page on">
+  <div class="g4 mb1">
+    <div class="kcard"><div class="kl">Monthly Income</div><div class="kv c-ok" id="ov-inc">₹0</div><div class="ks">take-home + extra</div></div>
+    <div class="kcard"><div class="kl">Total Expenses</div><div class="kv c-dan" id="ov-exp">₹0</div><div class="ks" id="ov-exps">all categories</div></div>
+    <div class="kcard"><div class="kl">Total Debt</div><div class="kv c-rose" id="ov-dbt">₹0</div><div class="ks" id="ov-dbts">0 debts</div></div>
+    <div class="kcard"><div class="kl">Monthly Surplus</div><div class="kv" id="ov-sp">₹0</div><div class="ks" id="ov-sps">after costs</div></div>
+  </div>
+  <div class="g4 mb1">
+    <div class="kcard"><div class="kl">SIP Portfolio</div><div class="kv c-sky" id="ov-sipv">₹0</div><div class="ks" id="ov-sips">0 SIPs</div></div>
+    <div class="kcard"><div class="kl">Daily Spend (This Month)</div><div class="kv c-rose" id="ov-dex">₹0</div><div class="ks" id="ov-dexs">daily expenses</div></div>
+    <div class="kcard"><div class="kl">Interest-Only Loans</div><div class="kv c-dan" id="ov-io">₹0</div><div class="ks">need closure</div></div>
+    <div class="kcard"><div class="kl">Debt-Free Date</div><div class="kv c-warn" style="font-size:.95rem;margin-top:.2rem" id="ov-fd">—</div><div class="ks" id="ov-fm">add debts</div></div>
+  </div>
+  <div class="g2 mb1">
+    <div class="card">
+      <div class="sh"><div class="shdot"></div>Setup</div>
+      <div class="g2"><div class="fi"><label>Monthly Income (₹)</label><input type="number" id="s-inc" placeholder="90000" oninput="sv();rc()"></div><div class="fi"><label>Extra Income/Freelance (₹/mo)</label><input type="number" id="s-xi" placeholder="0" oninput="sv();rc()"></div></div>
+      <div class="g2"><div class="fi"><label>Emergency Fund/Savings (₹)</label><input type="number" id="s-sav" placeholder="60000" oninput="sv();rc()"></div><div class="fi"><label>Extra Debt Payment (₹/mo)</label><input type="number" id="s-xp" placeholder="5000" oninput="sv();rc()"></div></div>
+      <div class="ib">💡 <strong>Expenses tab</strong> for fixed costs · <strong>Daily tab</strong> for day-to-day · <strong>Debts tab</strong> auto-links EMIs · <strong>Reports tab</strong> for PDF reports</div>
+    </div>
+    <div class="card">
+      <div class="sh"><div class="shdot" style="background:var(--amber)"></div>Debt-Free Countdown</div>
+      <div class="rw" style="padding:.4rem 0"><svg width="130" height="130" class="ring"><circle class="rbg" cx="65" cy="65" r="52"/><circle class="rfg" id="r-dbt" cx="65" cy="65" r="52" stroke-dasharray="327" stroke-dashoffset="327" style="stroke:var(--teal)"/></svg><div class="rc"><div style="font-family:var(--fd);font-size:1.55rem;font-weight:900" id="r-pct">0%</div><div class="xxs c-muted">cleared</div></div></div>
+      <div style="text-align:center"><div style="font-family:var(--fd);font-size:.92rem;font-weight:900;color:var(--amber)" id="r-date">—</div><div class="xxs c-muted mt05" id="r-mo">Add debts to calculate</div></div>
+      <div class="tl mt1" id="ov-tl"></div>
+    </div>
+  </div>
+  <div class="card"><div class="sh"><div class="shdot" style="background:var(--rose)"></div>Expense Snapshot</div><div id="ov-snap"></div></div>
+</div>
+
+<!-- ════ EXPENSES ════ -->
+<div id="pg-expenses" class="page">
+  <div id="exp-cont"></div><div id="cust-cont"></div>
+  <div class="flex gap4 mb1 wrap"><button class="btn bg" onclick="openSecModal()">➕ New Section</button></div>
+  <div class="card"><div class="flex jb ac mb1"><div class="sh" style="margin-bottom:0"><div class="shdot" style="background:var(--rose)"></div>Grand Total</div><div style="font-family:var(--fd);font-size:1.3rem;font-weight:900;color:var(--rose)" id="exp-gt">₹0</div></div><div id="exp-bars"></div></div>
+</div>
+
+<!-- ════ DEBTS ════ -->
+<div id="pg-debts" class="page">
+  <div class="g2 mb1">
+    <div class="card"><div class="sh"><div class="shdot" style="background:var(--rose)"></div>Add / Manage Debts</div><button class="btn bp" style="width:100%;margin-bottom:.75rem" onclick="openDebtModal(null)">+ Add New Debt</button><div class="ib">🔗 <strong>Auto-link:</strong> Debts appear in EMI section automatically.<br>✏️ <strong>Edit inline:</strong> Use edit button on each debt card.</div></div>
+    <div class="card"><div class="sh"><div class="shdot" style="background:var(--lime)"></div>Strategy</div>
+      <div class="strat-c on" id="st-av" onclick="setSt('avalanche')"><div class="strat-nm">🔥 Avalanche <span class="bdg bdg-p">SAVES MOST</span></div><div class="strat-d">Extra payment targets highest-interest debt first. Optimal mathematically.</div></div>
+      <div class="strat-c" id="st-sn" onclick="setSt('snowball')"><div class="strat-nm">⛄ Snowball <span class="bdg bdg-muted">MOTIVATING</span></div><div class="strat-d">Clears smallest balance first. Psychological momentum.</div></div>
+      <div class="div"></div><div id="dbt-callout"></div>
+    </div>
+  </div>
+  <div class="card"><div class="flex jb ac mb1"><div class="sh" style="margin-bottom:0"><div class="shdot"></div>Your Debts</div><span id="dbt-stats" class="xxs c-muted mono"></span></div><div id="dbt-list"><div class="empty"><span class="empty-ic">💳</span>No debts yet.</div></div></div>
+</div>
+
+<!-- ════ SIPs ════ -->
+<div id="pg-sip" class="page">
+  <div class="g2 mb1">
+    <div class="card"><div class="sh"><div class="shdot" style="background:var(--sky)"></div>Portfolio Summary</div>
+      <div class="g2 mb1"><div><div class="kl">Invested</div><div style="font-family:var(--fd);font-size:1.2rem;font-weight:900" id="sip-ti">₹0</div></div><div><div class="kl">Current Value</div><div style="font-family:var(--fd);font-size:1.2rem;font-weight:900;color:var(--ok)" id="sip-tv">₹0</div></div><div><div class="kl">Gains</div><div style="font-family:var(--fd);font-size:1.2rem;font-weight:900;color:var(--lime)" id="sip-tg">₹0</div></div><div><div class="kl">Gain %</div><div style="font-family:var(--fd);font-size:1.2rem;font-weight:900;color:var(--amber)" id="sip-tp">0%</div></div></div>
+      <div class="div"></div><div class="kl">Total Projected</div><div style="font-family:var(--fd);font-size:1.5rem;font-weight:900;color:var(--sky)" id="sip-proj">₹0</div><div class="xxs c-muted mt05" id="sip-projd">Add SIPs to see projection</div>
+    </div>
+    <div class="card"><div class="sh"><div class="shdot" style="background:var(--lime)"></div>Growth Chart</div><canvas id="sip-chart" style="max-height:200px"></canvas></div>
+  </div>
+  <div class="flex jb ac mb1"><div class="sh" style="margin-bottom:0"><div class="shdot" style="background:var(--sky)"></div>My SIPs</div><button class="btn bp bsm" onclick="openSIPModal(null)">+ Add SIP</button></div>
+  <div id="sip-list"><div class="empty"><span class="empty-ic">📈</span>No SIPs yet.</div></div>
+</div>
+
+<!-- ════ INVEST ════ -->
+<div id="pg-invest" class="page">
+  <div class="ticker" id="tick"><div class="ticker-in" id="tick-in">
+    <div class="ti"><span class="ti-n">NIFTY 50</span><span class="ti-v" id="t-n">--</span><span class="ti-c" id="tc-n">--</span></div>
+    <div class="ti"><span class="ti-n">SENSEX</span><span class="ti-v" id="t-s">--</span><span class="ti-c" id="tc-s">--</span></div>
+    <div class="ti"><span class="ti-n">BANK NIFTY</span><span class="ti-v" id="t-b">--</span><span class="ti-c" id="tc-b">--</span></div>
+    <div class="ti"><span class="ti-n">NIFTY MIDCAP</span><span class="ti-v" id="t-m">--</span><span class="ti-c" id="tc-m">--</span></div>
+    <div class="ti"><span class="ti-n">GOLD MCX</span><span class="ti-v" id="t-g">--</span><span class="ti-c" id="tc-g">--</span></div>
+    <div class="ti"><span class="ti-n">NIFTY 50</span><span class="ti-v">--</span><span class="ti-c">--</span></div>
+    <div class="ti"><span class="ti-n">SENSEX</span><span class="ti-v">--</span><span class="ti-c">--</span></div>
+  </div></div>
+  <div class="cb-sky mb1" id="mkt-note">📡 Loading market data...</div>
+  <div class="g2 mb1">
+    <div class="card"><div class="sh"><div class="shdot" style="background:var(--amber)"></div>Step-by-Step Plan</div><div id="inv-steps"><div class="empty xxs">Generating your plan...</div></div></div>
+    <div class="card"><div class="sh"><div class="shdot" style="background:var(--lime)"></div>Asset Allocation</div><canvas id="alloc-c" style="max-height:170px"></canvas><div id="alloc-leg" class="flex wrap gap4 mt1"></div></div>
+  </div>
+  <div class="card mb1"><div class="sh"><div class="shdot" style="background:var(--sky)"></div>Recommended Funds</div><div id="fund-list"><div class="empty xxs">Loading...</div></div></div>
+  <div class="card"><div class="sh"><div class="shdot" style="background:var(--rose)"></div>Extra Income Ideas</div><div id="ei-list"><div class="empty xxs">Loading...</div></div></div>
+</div>
+
+<!-- ════ DAILY EXPENSES ════ -->
+<div id="pg-daily" class="page">
+  <!-- Quick add -->
+  <div class="dex-quick">
+    <div class="sh"><div class="shdot" style="background:var(--amber)"></div>Quick Add</div>
+    <div class="dex-row">
+      <div class="fi"><label>Date</label><input type="date" id="de-qdt"></div>
+      <div class="fi" style="flex:1.5"><label>Category</label><select id="de-qcat"></select></div>
+      <div class="fi"><label>Amount (₹)</label><input type="number" id="de-qamt" placeholder="0" min="0"></div>
+      <div class="fi" style="flex:2"><label>Note (optional)</label><input id="de-qnote" placeholder="e.g. Lunch at Dominos"></div>
+      <div class="fi" style="flex:0;margin-bottom:0"><label style="opacity:0">add</label><button class="btn bp" onclick="addDex()">+ Add</button></div>
+    </div>
+  </div>
+
+  <!-- Category management -->
+  <div class="card mb1">
+    <div class="flex jb ac mb1">
+      <div class="sh" style="margin-bottom:0"><div class="shdot" style="background:var(--rose)"></div>Categories</div>
+      <button class="btn bg bsm" onclick="openDCatModal(null)">+ New Category</button>
+    </div>
+    <div class="cat-mgr" id="cat-mgr"></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="g4 mb1">
+    <div class="kcard"><div class="kl">Today</div><div class="kv c-rose" id="dex-today">₹0</div><div class="ks" id="dex-today-c">0 entries</div></div>
+    <div class="kcard"><div class="kl">This Week</div><div class="kv c-warn" id="dex-week">₹0</div><div class="ks">7-day total</div></div>
+    <div class="kcard"><div class="kl">This Month</div><div class="kv c-rose" id="dex-month">₹0</div><div class="ks" id="dex-month-c">current month</div></div>
+    <div class="kcard"><div class="kl">Top Category</div><div class="kv c-sky" id="dex-top" style="font-size:1rem;margin-top:.2rem">—</div><div class="ks" id="dex-tops">this month</div></div>
+  </div>
+
+  <!-- Entries list -->
+  <div class="card">
+    <div class="flex jb ac mb1">
+      <div class="sh" style="margin-bottom:0"><div class="shdot"></div>Expense Log</div>
+      <div class="flex gap4 ac">
+        <select id="dex-filter-mo" class="ainp" style="min-width:0;width:auto" onchange="renderDex()"></select>
+        <button class="btn bg bsm" onclick="clearDexFilter()">All</button>
+      </div>
+    </div>
+    <div id="dex-list"><div class="empty"><span class="empty-ic">🗓</span>No daily expenses yet. Use Quick Add above.</div></div>
+  </div>
+</div>
+
+<!-- ════ MILESTONES ════ -->
+<div id="pg-milestones" class="page">
+  <div class="cb-warn mb1" id="ms-hl">🎯 Add income &amp; debts to generate milestones.</div>
+  <div class="g2 mb1">
+    <div class="card"><div class="sh"><div class="shdot" style="background:var(--danger)"></div>Interest-Only Loans</div><div id="io-sec"></div></div>
+    <div class="card"><div class="sh"><div class="shdot" style="background:var(--amber)"></div>Closure Tracker</div><div id="cl-track"></div></div>
+  </div>
+  <div class="sh mt1 mb1"><div class="shdot"></div>Your Milestones</div>
+  <div id="ms-cont"><div class="empty"><span class="empty-ic">🎯</span>Add data to generate milestones.</div></div>
+</div>
+
+<!-- ════ BUDGET ════ -->
+<div id="pg-budget" class="page">
+  <div class="g2 mb1">
+    <div class="card"><div class="sh"><div class="shdot" style="background:var(--amber)"></div>Income Allocation</div><div id="bgt-bars"></div></div>
+    <div class="card"><div class="sh"><div class="shdot" style="background:var(--lime)"></div>Savings Rate</div>
+      <div class="rw" style="padding:.4rem 0"><svg width="120" height="120" class="ring"><circle class="rbg" cx="60" cy="60" r="48"/><circle class="rfg" id="r-sav" cx="60" cy="60" r="48" stroke-dasharray="301" stroke-dashoffset="301" style="stroke:var(--amber)"/></svg><div class="rc"><div style="font-family:var(--fd);font-size:1.4rem;font-weight:900;color:var(--amber)" id="r-sav-p">0%</div><div class="xxs c-muted">saved</div></div></div>
+      <div id="sav-vrd" class="xs c-muted" style="text-align:center;line-height:1.6;padding:0 .35rem"></div>
+    </div>
+  </div>
+  <div class="card mb1"><div class="sh"><div class="shdot" style="background:var(--rose)"></div>Smart Allocation Plan</div><div id="alloc-plan"></div></div>
+  <div class="card"><div class="sh"><div class="shdot"></div>Category vs Recommended</div><div id="cat-cmp"></div></div>
+</div>
+
+<!-- ════ REPORTS ════ -->
+<div id="pg-reports" class="page">
+  <!-- Controls -->
+  <div class="report-controls no-print">
+    <div class="sh"><div class="shdot" style="background:var(--sky)"></div>Generate Report</div>
+    <div class="flex gap6 ac wrap mb1">
+      <div class="fi" style="flex:1;min-width:140px;margin-bottom:0"><label>From Date</label><input type="date" id="rpt-from"></div>
+      <div class="fi" style="flex:1;min-width:140px;margin-bottom:0"><label>To Date</label><input type="date" id="rpt-to"></div>
+      <div class="fi" style="flex:1;min-width:140px;margin-bottom:0"><label>Include</label><select id="rpt-type"><option value="all">All Expenses</option><option value="daily">Daily Only</option><option value="fixed">Fixed Only</option></select></div>
+      <div style="padding-top:1.2rem"><button class="btn bp" onclick="genReport()">📊 Generate</button></div>
+    </div>
+    <div class="ib xxs">Reports pull from your Daily Expenses log + Fixed Expenses for the selected date range. Includes Gantt timeline, category breakdown, and detailed table.</div>
+  </div>
+
+  <!-- Preview -->
+  <div id="rpt-preview-wrap" style="display:none">
+    <div class="flex jb ac mb1 no-print">
+      <div class="sh" style="margin-bottom:0"><div class="shdot" style="background:var(--sky)"></div>Report Preview</div>
+      <div class="flex gap4">
+        <button class="btn bg bsm" onclick="printReport()">🖨️ Print</button>
+        <button class="btn bp bsm" onclick="downloadPDF()">⬇️ Download PDF</button>
+      </div>
+    </div>
+    <div class="report-preview" id="rpt-content">
+      <!-- filled by genReport() -->
+    </div>
+  </div>
+</div>
+
+<!-- ════ STATEMENTS ════ -->
+<div id="pg-statements" class="page">
+  <div class="card mb1"><div class="sh"><div class="shdot" style="background:var(--sky)"></div>Bank Statement Analyser</div>
+    <div class="upz" id="upz" onclick="document.getElementById('stmt-f').click()" ondragover="dov(event)" ondragleave="dol()" ondrop="dod(event)">
+      <input type="file" id="stmt-f" accept=".csv,.txt" onchange="hStmt(event)">
+      <div style="font-size:2rem;margin-bottom:.4rem">🏦</div>
+      <div style="font-family:var(--fd);font-size:.9rem;font-weight:800;margin-bottom:.25rem">Drop bank statement CSV</div>
+      <div class="xxs c-muted">HDFC · SBI · ICICI · Axis · Kotak · 100% local processing</div>
+    </div>
+    <div class="ib mt1 xxs">📋 <strong>Export:</strong> Net Banking → Statement → CSV. Headers needed: Date, Narration, Debit, Credit.</div>
+  </div>
+  <div id="stmt-res" style="display:none">
+    <div class="g4 mb1">
+      <div class="kcard"><div class="kl">Total Credit</div><div class="kv c-ok" id="st-in">₹0</div><div class="ks" id="st-per">—</div></div>
+      <div class="kcard"><div class="kl">Total Debit</div><div class="kv c-dan" id="st-out">₹0</div><div class="ks">period</div></div>
+      <div class="kcard"><div class="kl">Net Flow</div><div class="kv" id="st-net">₹0</div><div class="ks">credit − debit</div></div>
+      <div class="kcard"><div class="kl">Avg Monthly</div><div class="kv c-rose" id="st-avg">₹0</div><div class="ks">per month</div></div>
+    </div>
+    <div class="card mb1"><div class="sh"><div class="shdot" style="background:var(--sky)"></div>Monthly Flow</div><canvas id="stmt-chart" style="max-height:260px"></canvas></div>
+    <div class="card mb1"><div class="sh"><div class="shdot" style="background:var(--rose)"></div>Month-by-Month</div><div id="stmt-mo"></div></div>
+    <div class="card"><div class="sh"><div class="shdot"></div>Top Debits</div><div id="stmt-top"></div></div>
+  </div>
+</div>
+
+<!-- ════ AI ════ -->
+<div id="pg-ai" class="page">
+  <div class="card">
+    <div class="sh"><div class="shdot"></div>AI Financial Advisor <span class="bdg bdg-p" style="vertical-align:middle">Claude-Powered</span></div>
+    <div class="chips">
+      <div class="chip" onclick="sq('How do I become debt-free fastest?')">🚀 Debt-free fastest</div>
+      <div class="chip" onclick="sq('Analyse my daily spending patterns')">📊 Daily patterns</div>
+      <div class="chip" onclick="sq('Which SIP is underperforming?')">📈 SIP analysis</div>
+      <div class="chip" onclick="sq('How much should I invest monthly?')">💰 Investment amount</div>
+      <div class="chip" onclick="sq('Plan closure of interest-only loans')">🎯 Loan closure</div>
+      <div class="chip" onclick="sq('Give me a 12-month financial action plan')">📅 12-month plan</div>
+    </div>
+    <div class="chat-msgs" id="chat-msgs"><div class="msg a"><span class="aitg">// FINANCE AI · v7</span>Namaste! 🙏 I can see your income, expenses, daily spending, debts, and SIPs. Ask me anything for tailored India-specific advice.</div></div>
+    <div class="flex gap4"><input class="ci" id="chat-in" placeholder="Ask anything..." onkeydown="if(event.key==='Enter')sendMsg()"><button class="btn bp" onclick="sendMsg()">Send →</button></div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

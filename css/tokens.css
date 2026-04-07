@@ -1,0 +1,72 @@
+/* ═══════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════ */
+:root{
+  /* Surfaces */
+  --bg:#05050f;
+  --bg2:#0b0b1a;
+  --s0:#101022;
+  --s1:#161630;
+  --s2:#1c1c3a;
+  --s3:#232342;
+
+  /* Borders */
+  --b1:#252545;
+  --b2:#30305a;
+  --b3:#3d3d70;
+
+  /* Brand palette */
+  --p:#7c73e6;      /* primary indigo */
+  --p2:#a598ff;     /* primary light */
+  --pg:linear-gradient(135deg,#6c63d5,#9b8ff0);
+
+  --rose:#fb7185;   /* accent rose */
+  --teal:#2dd4bf;   /* teal */
+  --amber:#f59e0b;  /* amber */
+  --lime:#86efac;   /* lime */
+  --sky:#38bdf8;    /* sky */
+  --coral:#fb923c;  /* coral */
+
+  /* Semantic */
+  --ok:#10b981;
+  --ok-s:rgba(16,185,129,.12);
+  --warn:#f59e0b;
+  --warn-s:rgba(245,158,11,.12);
+  --danger:#f43f5e;
+  --danger-s:rgba(244,63,94,.12);
+  --info-s:rgba(124,115,230,.12);
+
+  /* Text */
+  --t1:#f1f5f9;
+  --t2:#94a3b8;
+  --t3:#475569;
+
+  /* Type */
+  --fd:'Cabinet Grotesk',sans-serif;
+  --fb:'Outfit',sans-serif;
+  --fm:'JetBrains Mono',monospace;
+
+  /* Spacing & shape */
+  --r:14px;
+  --rm:9px;
+  --rs:6px;
+  --sh:0 8px 40px rgba(0,0,0,.6);
+  --sh2:0 2px 12px rgba(0,0,0,.35);
+  --tr:.16s cubic-bezier(.4,0,.2,1);
+}
+[data-theme=light]{
+  --bg:#f0f1ff;
+  --bg2:#e8e9ff;
+  --s0:#ffffff;
+  --s1:#f5f5ff;
+  --s2:#eeefff;
+  --s3:#e8e9ff;
+  --b1:#dde0ff;
+  --b2:#c5c9f5;
+  --b3:#abaee8;
+  --t1:#0f172a;
+  --t2:#475569;
+  --t3:#94a3b8;
+  --sh:0 4px 24px rgba(100,100,200,.1);
+  --sh2:0 2px 8px rgba(100,100,200,.08);
+}

@@ -1,0 +1,15 @@
+/* PRINT / PDF styles */
+@media print{
+  .hdr,.nav,.report-controls,.no-print{display:none!important}
+  body{background:#fff;color:#000}
+  .report-preview{border:none;padding:0}
+  .rpt-table td,.rpt-table th{border-color:#ddd}
+}
+
+/* RESPONSIVE */
+@media(max-width:720px){
+  .g2,.g3,.g4{grid-template-columns:1fr}.s2,.s3,.s4{grid-column:span 1}
+  .egrid{grid-template-columns:1fr 1fr}
+  .sip-sts{grid-template-columns:1fr 1fr}
+  .rpt-kpis{grid-template-columns:1fr 1fr}
+}

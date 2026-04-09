@@ -1,8 +1,7 @@
 // ══════════════════════════════════════
 // THEME — toggle, apply, chart updates
 // ══════════════════════════════════════
-import { S, charts } from '../state.js';
-import { sv } from '../state.js';
+import { S, charts, sv } from '../state.js';
 
 export function toggleTheme() {
   S.theme = S.theme === 'dark' ? 'light' : 'dark';

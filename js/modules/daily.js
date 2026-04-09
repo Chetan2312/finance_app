@@ -26,7 +26,8 @@ export function saveDCat() {
 export function rmDCat(id) {
   if (!confirm('Delete category? Expenses in it become uncategorised.')) return;
   S.dailyCats = S.dailyCats.filter(c => c.id !== id);
-  S.dailyExps.forEach(e => { if (e.catId === id) e.catId = 'dc10'; });
+  const fallbackId = S.dailyCats[S.dailyCats.length - 1]?.id || '';
+  S.dailyExps.forEach(e => { if (e.catId === id) e.catId = fallbackId; });
   sv(); renderCatMgr(); renderDex(); renderDexSelects();
 }
 

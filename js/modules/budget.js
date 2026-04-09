@@ -1,9 +1,8 @@
 // ══════════════════════════════════════
 // BUDGET — updateBudget(), allocation plan, category comparison
 // ══════════════════════════════════════
-import { fmt } from '../utils.js';
-import { S } from '../state.js';
-import { N, getTotalExp, calcPayoff } from '../state.js';
+import { fmt, N } from '../utils.js';
+import { S, getTotalExp, calcPayoff } from '../state.js';
 
 export function updateBudget(inc, exp, bd, xp, surp, sipM) {
   if (!inc) return;

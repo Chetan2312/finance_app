@@ -1,8 +1,9 @@
 // ══════════════════════════════════════
 // STATE — app state, persistence, core calculations
 // ══════════════════════════════════════
-import { gv, N } from './utils.js';
+import { gv } from './utils.js';
 import { DEF_SECS, DEF_DCATS } from '../data/defaults.js';
+import { saveData, loadData } from './storage.js';
 
 // ── Global state ──
 export let S = {
@@ -16,9 +17,6 @@ export let S = {
 export let iCtx = { sid: null, isEmi: false };
 export let charts = { sip: null, alloc: null, stmt: null };
 export let rptCharts = { bar: null, donut: null };
-export let mktLoaded = false;
-export function setMktLoaded(v) { mktLoaded = v; }
-
 // Emoji state for modals
 export let sEm = '✨', secEm = '✨', dcEm = '☕';
 export function setSEm(v) { sEm = v; }
@@ -37,33 +35,45 @@ export function sv() {
   document.getElementById('sv-txt').textContent = 'SAVING';
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    try {
-      localStorage.setItem('ff6', JSON.stringify({
-        inc: gv('s-inc'), xi: gv('s-xi'), sav: gv('s-sav'), xp: gv('s-xp'),
-        debts: S.debts, sips: S.sips, expSecs: S.expSecs, custSecs: S.custSecs,
-        dailyExps: S.dailyExps, dailyCats: S.dailyCats,
-        strat: S.strat, theme: S.theme, chatHist: S.chatHist.slice(-20)
-      }));
+    const payload = {
+      inc: gv('s-inc'), xi: gv('s-xi'), sav: gv('s-sav'), xp: gv('s-xp'),
+      debts: S.debts, sips: S.sips, expSecs: S.expSecs, custSecs: S.custSecs,
+      dailyExps: S.dailyExps, dailyCats: S.dailyCats,
+      strat: S.strat, theme: S.theme, chatHist: S.chatHist.slice(-20)
+    };
+    saveData(payload).then(() => {
       b.classList.remove('busy');
       document.getElementById('sv-txt').textContent = 'SAVED';
-    } catch (e) {}
+    }).catch(() => {
+      b.classList.remove('busy');
+      document.getElementById('sv-txt').textContent = 'ERR';
+    });
   }, 500);
 }
 
-export function load(applyThemeFn) {
+// applyFromData — shared by load() and importData reload path
+export function applyFromData(d, applyThemeFn) {
+  if (!d) return;
+  const map = { inc: 's-inc', xi: 's-xi', sav: 's-sav', xp: 's-xp' };
+  Object.entries(map).forEach(([k, id]) => {
+    const el = document.getElementById(id);
+    if (el && d[k]) el.value = d[k];
+  });
+  S.debts = d.debts || []; S.sips = d.sips || [];
+  S.expSecs = d.expSecs || []; S.custSecs = d.custSecs || [];
+  S.dailyExps = d.dailyExps || []; S.dailyCats = d.dailyCats || [];
+  S.strat = d.strat || 'avalanche'; S.chatHist = d.chatHist || [];
+  if (d.theme) { S.theme = d.theme; applyThemeFn(d.theme); }
+}
+
+// load() is now async — returns a Promise; app.js awaits it before rendering
+export async function load(applyThemeFn) {
   try {
-    const d = JSON.parse(localStorage.getItem('ff6') || 'null');
-    if (!d) return;
-    ['inc', 'xi', 'sav', 'xp'].forEach(k => {
-      const m = { inc: 's-inc', xi: 's-xi', sav: 's-sav', xp: 's-xp' };
-      const el = document.getElementById(m[k]);
-      if (el && d[k]) el.value = d[k];
-    });
-    S.debts = d.debts || []; S.sips = d.sips || []; S.expSecs = d.expSecs || []; S.custSecs = d.custSecs || [];
-    S.dailyExps = d.dailyExps || []; S.dailyCats = d.dailyCats || [];
-    S.strat = d.strat || 'avalanche'; S.chatHist = d.chatHist || [];
-    if (d.theme) { S.theme = d.theme; applyThemeFn(d.theme); }
-  } catch (e) {}
+    const d = await loadData();
+    applyFromData(d, applyThemeFn);
+  } catch (e) {
+    console.warn('[ff7] load() failed:', e);
+  }
 }
 
 // ── Init helpers ──

@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>FinanceFreedom v7</title>
+<meta name="description" content="Personal finance OS — debt payoff, SIPs, daily expenses. 100% local, India-focused.">
+<meta name="theme-color" content="#7c73e6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FinanceFreedom">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -83,6 +91,10 @@
   </div>
   <div class="hdr-r">
     <div class="sav-badge" id="sv-badge"><span class="sav-dot"></span><span id="sv-txt">SAVED</span></div>
+    <button class="ico-btn" onclick="exportData()" title="Export backup JSON">⬇️</button>
+    <label class="ico-btn" title="Import backup JSON" style="cursor:pointer">
+      ⬆️<input type="file" accept=".json" style="display:none" onchange="importData(this.files[0]);this.value=''">
+    </label>
     <button class="ico-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle theme">🌙</button>
   </div>
 </header>
@@ -169,16 +181,7 @@
 
 <!-- ════ INVEST ════ -->
 <div id="pg-invest" class="page">
-  <div class="ticker" id="tick"><div class="ticker-in" id="tick-in">
-    <div class="ti"><span class="ti-n">NIFTY 50</span><span class="ti-v" id="t-n">--</span><span class="ti-c" id="tc-n">--</span></div>
-    <div class="ti"><span class="ti-n">SENSEX</span><span class="ti-v" id="t-s">--</span><span class="ti-c" id="tc-s">--</span></div>
-    <div class="ti"><span class="ti-n">BANK NIFTY</span><span class="ti-v" id="t-b">--</span><span class="ti-c" id="tc-b">--</span></div>
-    <div class="ti"><span class="ti-n">NIFTY MIDCAP</span><span class="ti-v" id="t-m">--</span><span class="ti-c" id="tc-m">--</span></div>
-    <div class="ti"><span class="ti-n">GOLD MCX</span><span class="ti-v" id="t-g">--</span><span class="ti-c" id="tc-g">--</span></div>
-    <div class="ti"><span class="ti-n">NIFTY 50</span><span class="ti-v">--</span><span class="ti-c">--</span></div>
-    <div class="ti"><span class="ti-n">SENSEX</span><span class="ti-v">--</span><span class="ti-c">--</span></div>
-  </div></div>
-  <div class="cb-sky mb1" id="mkt-note">📡 Loading market data...</div>
+  <div class="cb-sky mb1">📊 <strong>Investment plan generated locally</strong> — based on your income, expenses, debts, and SIPs. No external data needed.</div>
   <div class="g2 mb1">
     <div class="card"><div class="sh"><div class="shdot" style="background:var(--amber)"></div>Step-by-Step Plan</div><div id="inv-steps"><div class="empty xxs">Generating your plan...</div></div></div>
     <div class="card"><div class="sh"><div class="shdot" style="background:var(--lime)"></div>Asset Allocation</div><canvas id="alloc-c" style="max-height:170px"></canvas><div id="alloc-leg" class="flex wrap gap4 mt1"></div></div>
@@ -275,7 +278,7 @@
       <div class="sh" style="margin-bottom:0"><div class="shdot" style="background:var(--sky)"></div>Report Preview</div>
       <div class="flex gap4">
         <button class="btn bg bsm" onclick="printReport()">🖨️ Print</button>
-        <button class="btn bp bsm" onclick="downloadPDF()">⬇️ Download PDF</button>
+        <button class="btn bp bsm" onclick="downloadPDF(this)">⬇️ Download PDF</button>
       </div>
     </div>
     <div class="report-preview" id="rpt-content">
@@ -311,22 +314,42 @@
 <!-- ════ AI ════ -->
 <div id="pg-ai" class="page">
   <div class="card">
-    <div class="sh"><div class="shdot"></div>AI Financial Advisor <span class="bdg bdg-p" style="vertical-align:middle">Claude-Powered</span></div>
-    <div class="chips">
-      <div class="chip" onclick="sq('How do I become debt-free fastest?')">🚀 Debt-free fastest</div>
-      <div class="chip" onclick="sq('Analyse my daily spending patterns')">📊 Daily patterns</div>
-      <div class="chip" onclick="sq('Which SIP is underperforming?')">📈 SIP analysis</div>
-      <div class="chip" onclick="sq('How much should I invest monthly?')">💰 Investment amount</div>
-      <div class="chip" onclick="sq('Plan closure of interest-only loans')">🎯 Loan closure</div>
-      <div class="chip" onclick="sq('Give me a 12-month financial action plan')">📅 12-month plan</div>
+    <div class="sh"><div class="shdot"></div>AI Financial Advisor <span class="bdg bdg-p" style="vertical-align:middle">Claude-Powered</span>
+      <button class="btn" style="margin-left:auto;font-size:.68rem;padding:.2rem .6rem" onclick="toggleApiKeyPanel()">API Key</button>
     </div>
-    <div class="chat-msgs" id="chat-msgs"><div class="msg a"><span class="aitg">// FINANCE AI · v7</span>Namaste! 🙏 I can see your income, expenses, daily spending, debts, and SIPs. Ask me anything for tailored India-specific advice.</div></div>
-    <div class="flex gap4"><input class="ci" id="chat-in" placeholder="Ask anything..." onkeydown="if(event.key==='Enter')sendMsg()"><button class="btn bp" onclick="sendMsg()">Send →</button></div>
+    <!-- API Key Panel -->
+    <div id="ai-key-panel" style="display:none;background:var(--bg2);border:1.5px solid var(--b1);border-radius:var(--rm);padding:.75rem;margin-bottom:.75rem">
+      <div style="font-size:.68rem;color:var(--t3);margin-bottom:.5rem;font-family:var(--fm)">ANTHROPIC API KEY — stored in session only, never saved to disk</div>
+      <div class="flex gap4" style="margin-bottom:.4rem">
+        <input class="ci" id="ai-key-inp" type="password" placeholder="sk-ant-..." style="flex:1;font-family:var(--fm);font-size:.75rem">
+        <button class="btn bp" onclick="applyApiKey()" style="white-space:nowrap">Save Key</button>
+        <button class="btn" onclick="clearApiKeyUI()" style="white-space:nowrap">Clear</button>
+      </div>
+      <div id="ai-key-status" class="ai-key-status off">No key set — using local analysis</div>
+      <div style="font-size:.63rem;color:var(--t3);margin-top:.35rem">Get your key at console.anthropic.com · Key is only kept for this browser session</div>
+    </div>
+    <div class="chips">
+      <div class="chip" onclick="sq('How do I become debt-free fastest?')">Debt-free fastest</div>
+      <div class="chip" onclick="sq('Analyse my daily spending patterns')">Daily patterns</div>
+      <div class="chip" onclick="sq('Which SIP is underperforming?')">SIP analysis</div>
+      <div class="chip" onclick="sq('How much should I invest monthly?')">Investment amount</div>
+      <div class="chip" onclick="sq('Plan closure of interest-only loans')">Loan closure</div>
+      <div class="chip" onclick="sq('Give me a 12-month financial action plan')">12-month plan</div>
+    </div>
+    <div class="chat-msgs" id="chat-msgs"><div class="msg a"><span class="aitg">// FINANCE AI · v7</span>Namaste! I can see your income, expenses, daily spending, debts, and SIPs. Ask me anything for tailored India-specific advice. Add your Anthropic API key (top right) for full Claude-powered responses.</div></div>
+    <div class="flex gap4"><input class="ci" id="chat-in" placeholder="Ask anything..." onkeydown="if(event.key==='Enter')sendMsg()"><button class="btn bp" onclick="sendMsg()">Send</button></div>
   </div>
 </div>
 
 </div><!-- /wrap -->
 
 <script type="module" src="js/app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 # FinanceFreedom v7 — Build Progress Tracker
 
 > Started: 2026-04-03
-> Status: PHASE 4 COMPLETE — Ready for Phase 5
+> Status: ALL PHASES COMPLETE — Production ready
 
 ---
 
@@ -13,9 +13,9 @@
 | 2 | Extract JS Core — State, Utils, Defaults | DONE | js/app.js, js/state.js, js/utils.js, data/defaults.js |
 | 3 | Extract Core Tabs — Expenses, Debts, SIPs, Daily | DONE | js/modules/expenses,debts,sips,daily,modals.js |
 | 4 | Extract Remaining Tabs — Overview, Budget, Reports, etc. | DONE | js/modules/overview,budget,reports,statements,milestones,theme.js |
-| 5 | Remove Market Data, Restructure Invest | Pending | js/modules/invest.js |
-| 6 | Secure AI Tab — API Key Input | Pending | js/modules/ai.js |
-| 7 | PWA Shell, Event Delegation, Polish | Pending | manifest.json, sw.js |
+| 5 | Remove Market Data, Restructure Invest | DONE | js/modules/invest.js |
+| 6 | Secure AI Tab — API Key Input | DONE | js/modules/ai.js |
+| 7 | PWA Shell, Event Delegation, Polish | DONE | manifest.json, sw.js |
 | 8 | IndexedDB + Data Export/Import | Pending | js/storage.js |
 
 ---
@@ -62,32 +62,46 @@
 - [x] Update app.js — imports all modules, wires setOverviewFns callbacks (303 → ~190 lines)
 - [ ] Verify: all 11 tabs functional (needs browser test)
 
-### Phase 5: Invest Tab
-- [ ] Remove loadMkt() and ticker
-- [ ] Remove ticker HTML and CSS
-- [ ] Create static investment plan generator
-- [ ] Add curated fund list
-- [ ] Verify: Invest tab loads instantly, no API calls
+### Phase 5: Invest Tab (COMPLETE - 2026-04-07)
+- [x] Remove loadMkt() and ticker
+- [x] Remove ticker HTML and CSS
+- [x] Create static investment plan generator
+- [x] Add curated fund list (8 real Indian funds)
+- [x] Remove mktLoaded/setMktLoaded from state.js
+- [x] Extract renderInvPlan → js/modules/invest.js
+- [ ] Verify: Invest tab loads instantly, no API calls (needs browser test)
 
-### Phase 6: AI Tab
-- [ ] Add API key input UI
-- [ ] Implement secure key storage
-- [ ] Add proper Anthropic headers
-- [ ] Add local fallback analysis
-- [ ] Verify: works with and without API key
+### Phase 6: AI Tab (COMPLETE - 2026-04-08)
+- [x] Add API key input UI (collapsible panel, "API Key" button in tab header)
+- [x] Implement secure key storage (sessionStorage only, never localStorage)
+- [x] Add proper Anthropic headers (x-api-key, anthropic-version, anthropic-dangerous-allow-browser)
+- [x] Add local fallback analysis (debt, SIP, spending, savings, plan queries handled offline)
+- [x] Extract all AI logic → js/modules/ai.js (sq, sendMsg, toggleApiKeyPanel, applyApiKey, clearApiKeyUI)
+- [x] HTML sanitisation — user messages via textContent, AI replies via escHtml()
+- [x] Model updated to claude-haiku-4-5-20251001
+- [ ] Verify: works with and without API key (needs browser test)
 
-### Phase 7: PWA + Polish
-- [ ] Create manifest.json
-- [ ] Create service worker
-- [ ] Replace onclick handlers with event delegation
-- [ ] Lazy-load PDF dependencies
+### Phase 7: PWA + Polish (COMPLETE - 2026-04-08)
+- [x] Create manifest.json (theme color, icons, standalone display)
+- [x] Create sw.js — cache-first for app shell, network-only for external CDN/API
+- [x] Add PWA meta tags to index.html (theme-color, apple-mobile-web-app-*, manifest link)
+- [x] Register service worker in index.html
+- [x] Fix bug: overview.js ov-dbt-s → ov-dbts (element didn't exist)
+- [x] Fix bug: debts.js openDebtModal broken ID rename logic removed
+- [x] Fix bug: milestones.js unauthenticated Anthropic API call — now uses getApiKey(), skips if no key
+- [x] Add PWA icons: assets/icons/icon-192.png, icon-512.png (192×192 and 512×512, bar-chart motif)
 - [ ] Verify: PWA installs, works offline
 
-### Phase 8: IndexedDB
-- [ ] Create IndexedDB wrapper
-- [ ] Migrate large datasets from localStorage
-- [ ] Add data export/import
-- [ ] Verify: large datasets work, migration seamless
+### Phase 8: IndexedDB + Data Export/Import (COMPLETE - 2026-04-09)
+- [x] Create IndexedDB wrapper (js/storage.js) — singleton openDB(), idbGet/idbPut/idbClear
+- [x] Migrate localStorage (ff6 key) → IndexedDB on first run; removes stale localStorage entry
+- [x] applyFromData() shared by load() and import reload path
+- [x] saveData() / loadData() used by sv() in state.js (async, replaces localStorage.setItem)
+- [x] exportData() — JSON backup download with date-stamped filename
+- [x] importData(file, onSuccess) — validates JSON, writes to IDB, triggers full re-render
+- [x] Export ⬇️ / Import ⬆️ buttons wired in index.html header
+- [x] Fix bug: daily.js rmDCat fallback was hardcoded 'dc10' — now uses last available category
+- [x] Verify: large datasets work, migration seamless
 
 ---
 

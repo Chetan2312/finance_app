@@ -278,17 +278,6 @@ svg.ring circle{fill:none;stroke-width:8}
 .cb-info{background:var(--info-s);border:1.5px solid rgba(124,115,230,.3);border-radius:var(--rm);padding:.72rem;font-size:.72rem;line-height:1.6;color:var(--p2)}
 .cb-sky{background:rgba(56,189,248,.08);border:1.5px solid rgba(56,189,248,.3);border-radius:var(--rm);padding:.72rem;font-size:.72rem;line-height:1.6;color:var(--sky)}
 
-/* ═══════════════════════════════
-   TICKER
-═══════════════════════════════ */
-.ticker{background:var(--s0);border:1.5px solid var(--b1);border-radius:var(--rm);padding:.38rem .8rem;margin-bottom:.8rem;overflow:hidden}
-.ticker-in{display:flex;gap:2.5rem;animation:tk 35s linear infinite;width:max-content}
-.ticker-in:hover{animation-play-state:paused}
-.ti{display:flex;align-items:center;gap:.38rem;white-space:nowrap}
-.ti-n{font-size:.62rem;color:var(--t3);font-family:var(--fm)}
-.ti-v{font-size:.68rem;font-family:var(--fm);font-weight:500}
-.ti-c{font-size:.6rem;font-family:var(--fm)}
-@keyframes tk{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
 /* ═══════════════════════════════
    CHAT
@@ -307,6 +296,10 @@ svg.ring circle{fill:none;stroke-width:8}
 .chips{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.65rem}
 .chip{padding:.22rem .6rem;border-radius:20px;font-size:.67rem;background:var(--s1);border:1.5px solid var(--b1);cursor:pointer;transition:all var(--tr);color:var(--t3)}
 .chip:hover{border-color:var(--p);color:var(--p2);background:var(--info-s)}
+.ai-key-status{font-size:.65rem;font-family:var(--fm)}
+.ai-key-status.ok{color:var(--ok)}
+.ai-key-status.off{color:var(--t3)}
+.ai-key-status.err{color:var(--rose)}
 
 /* ═══════════════════════════════
    MILESTONE CARDS

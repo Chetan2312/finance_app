@@ -63,7 +63,7 @@ export function sipSummary() {
   document.getElementById('sip-ti').textContent = fmt(ti); document.getElementById('sip-tv').textContent = fmt(tv);
   document.getElementById('sip-tg').textContent = (tg >= 0 ? '+' : '') + fmt(tg); document.getElementById('sip-tp').textContent = tp.toFixed(1) + '%';
   document.getElementById('sip-proj').textContent = fmt(fv);
-  document.getElementById('sip-projd').textContent = `Across ${S.sips.length} SIP${S.sips.length !== 1 ? 's' : ''}, next ${Math.max(...S.sips.map(x => x.plan), 0)}mo`;
+  document.getElementById('sip-projd').textContent = `Across ${S.sips.length} SIP${S.sips.length !== 1 ? 's' : ''}, next ${Math.max(0, ...S.sips.map(x => x.plan))}mo`;
   document.getElementById('ov-sipv').textContent = fmt(tv); document.getElementById('ov-sips').textContent = S.sips.length + ' SIP' + (S.sips.length !== 1 ? 's' : '');
 }
 

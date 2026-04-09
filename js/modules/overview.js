@@ -1,9 +1,8 @@
 // ══════════════════════════════════════
 // OVERVIEW — rc(), renderExpBars(), renderSnap()
 // ══════════════════════════════════════
-import { fmt } from '../utils.js';
-import { S, charts } from '../state.js';
-import { N, secTot, getTotalExp, calcPayoff, sipFV } from '../state.js';
+import { fmt, N } from '../utils.js';
+import { S, charts, secTot, getTotalExp, calcPayoff, sipFV } from '../state.js';
 
 // Callbacks injected by app.js after all modules load
 let _sipSummary = () => {};
@@ -39,7 +38,7 @@ export function rc() {
   document.getElementById('ov-inc').textContent = fmt(totInc);
   document.getElementById('ov-exp').textContent = fmt(exp);
   document.getElementById('ov-dbt').textContent = fmt(tD);
-  if (document.getElementById('ov-dbt-s')) document.getElementById('ov-dbt-s').textContent = S.debts.length + ' debts';
+  const dbtS = document.getElementById('ov-dbts'); if (dbtS) dbtS.textContent = S.debts.length + ' debt' + (S.debts.length !== 1 ? 's' : '');
   const se = document.getElementById('ov-sp');
   se.textContent = fmt(surp);
   se.className = 'kv ' + (surp >= 0 ? 'c-ok' : 'c-dan');

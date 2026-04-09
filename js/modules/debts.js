@@ -16,7 +16,6 @@ export function upRepHint() {
 }
 
 export function openDebtModal(id) {
-  document.getElementById('debt-edit-id') || document.getElementById('d-eid').setAttribute('id', 'debt-edit-id');
   document.getElementById('d-eid').value = id || ''; document.getElementById('mo-debt-t').textContent = id ? '✏️ Edit Debt' : '💳 Add Debt';
   if (id) {
     const d = S.debts.find(x => x.id === id);

@@ -2,10 +2,10 @@
 // MILESTONES — genMilestones, renderIOSec, buildMsLocal, renderMs
 // Note: API calls removed in Phase 5. Local logic only for now.
 // ══════════════════════════════════════
-import { fmt } from '../utils.js';
-import { S } from '../state.js';
-import { N, getTotalExp, calcPayoff, sipFV } from '../state.js';
+import { fmt, N } from '../utils.js';
+import { S, getTotalExp, calcPayoff, sipFV } from '../state.js';
 import { DICONS, MS_COLS } from '../../data/defaults.js';
+import { getApiKey } from './ai.js';
 
 export async function genMilestones() {
   const inc = N('s-inc') + N('s-xi');
@@ -21,17 +21,25 @@ export async function genMilestones() {
   if (!inc && !S.debts.length) return;
   buildMsLocal(surp, sav, ioDs, emiDs, sipV);
 
-  // AI-enhanced milestones (Phase 6 will add API key input — left as stub)
+  // AI-enhanced milestones — only runs if user has set an API key
+  const apiKey = getApiKey();
+  if (!apiKey) return;
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-allow-browser': 'true',
+      },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514', max_tokens: 1500,
+        model: 'claude-haiku-4-5-20251001', max_tokens: 1500,
         system: 'Indian finance coach. ONLY valid JSON.',
         messages: [{ role: 'user', content: `6 milestones JSON: {"hl":"sentence","ms":[{"num":1,"title":"...","desc":"...","when":"X months","amount":"₹X","type":"debt|save|invest|emergency|closure|freedom","urgency":"high|medium|low","action":"step"}]}\nIncome ₹${inc}/mo expenses ₹${exp}/mo surplus ₹${surp}/mo savings ₹${sav}.\nEMI debts: ${emiDs.map(d => d.name + ' ₹' + d.balance + '@' + d.rate + '%').join(', ') || 'none'}.\nIO loans: ${ioDs.map(d => d.name + ' ₹' + d.balance).join(', ') || 'none'}.` }],
       }),
     });
+    if (!res.ok) return;
     const d = await res.json();
     const ms = JSON.parse((d.content?.[0]?.text || '{}').replace(/```\w*|```/g, '').trim());
     if (ms.hl) document.getElementById('ms-hl').textContent = '🎯 ' + ms.hl;
@@ -59,7 +67,7 @@ function renderIOSec(io, sav, surp) {
   document.getElementById('ov-io').textContent = fmt(tot);
 }
 
-function buildMsLocal(surp, sav, io, emi, sipV) {
+function buildMsLocal(surp, sav, io, emi, _sipV) {
   const ms = [];
   const { total: exp } = getTotalExp();
   const ef = exp * 6;

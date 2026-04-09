@@ -2,8 +2,7 @@
 // REPORTS — genReport, buildGantt, drawRptCharts, print, PDF
 // ══════════════════════════════════════
 import { fmt } from '../utils.js';
-import { S, rptCharts } from '../state.js';
-import { getTotalExp } from '../state.js';
+import { S, rptCharts, getTotalExp } from '../state.js';
 
 export function genReport() {
   const from = document.getElementById('rpt-from').value;
@@ -128,13 +127,13 @@ function drawRptCharts(dates, dailyByDate, catTotals) {
 
 export function printReport() { window.print(); }
 
-export async function downloadPDF() {
+export async function downloadPDF(btn) {
   const el = document.getElementById('rpt-content');
   if (!el) { alert('Generate a report first'); return; }
+  // btn may be passed directly from onclick="downloadPDF(this)" or resolved here
+  const button = btn instanceof HTMLElement ? btn : document.querySelector('[onclick*="downloadPDF"]');
   try {
-    const btn = event.target;
-    btn.textContent = '⏳ Generating...';
-    btn.disabled = true;
+    if (button) { button.textContent = '⏳ Generating...'; button.disabled = true; }
     const canvas = await html2canvas(el, { backgroundColor: S.theme === 'dark' ? '#101022' : '#ffffff', scale: 2, useCORS: true, logging: false });
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -153,12 +152,10 @@ export async function downloadPDF() {
     }
     const from = document.getElementById('rpt-from').value, to = document.getElementById('rpt-to').value;
     pdf.save(`FinanceFreedom_Report_${from}_to_${to}.pdf`);
-    btn.textContent = '⬇️ Download PDF';
-    btn.disabled = false;
+    if (button) { button.textContent = '⬇️ Download PDF'; button.disabled = false; }
   } catch (e) {
     console.error(e);
     alert('PDF generation failed. Try Print instead.');
-    event.target.textContent = '⬇️ Download PDF';
-    event.target.disabled = false;
+    if (button) { button.textContent = '⬇️ Download PDF'; button.disabled = false; }
   }
 }

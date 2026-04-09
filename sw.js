@@ -5,35 +5,35 @@
 // All localStorage data remains on device.
 // ══════════════════════════════════════
 
-const CACHE = 'ff7-v2';
+const CACHE = 'ff7-v3';
 
 // App shell — all local files needed to run offline
 const SHELL = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/css/tokens.css',
-  '/css/base.css',
-  '/css/components.css',
-  '/css/responsive.css',
-  '/js/app.js',
-  '/js/utils.js',
-  '/js/state.js',
-  '/js/storage.js',
-  '/data/defaults.js',
-  '/js/modules/modals.js',
-  '/js/modules/expenses.js',
-  '/js/modules/debts.js',
-  '/js/modules/sips.js',
-  '/js/modules/daily.js',
-  '/js/modules/overview.js',
-  '/js/modules/budget.js',
-  '/js/modules/reports.js',
-  '/js/modules/statements.js',
-  '/js/modules/milestones.js',
-  '/js/modules/invest.js',
-  '/js/modules/theme.js',
-  '/js/modules/ai.js',
+  './',
+  './index.html',
+  './manifest.json',
+  './css/tokens.css',
+  './css/base.css',
+  './css/components.css',
+  './css/responsive.css',
+  './js/app.js',
+  './js/utils.js',
+  './js/state.js',
+  './js/storage.js',
+  './data/defaults.js',
+  './js/modules/modals.js',
+  './js/modules/expenses.js',
+  './js/modules/debts.js',
+  './js/modules/sips.js',
+  './js/modules/daily.js',
+  './js/modules/overview.js',
+  './js/modules/budget.js',
+  './js/modules/reports.js',
+  './js/modules/statements.js',
+  './js/modules/milestones.js',
+  './js/modules/invest.js',
+  './js/modules/theme.js',
+  './js/modules/ai.js',
 ];
 
 // ── Install: pre-cache app shell ──

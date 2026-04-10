@@ -5,7 +5,7 @@
 // All localStorage data remains on device.
 // ══════════════════════════════════════
 
-const CACHE = 'ff7-v3';
+const CACHE = 'ff7-v4';
 
 // App shell — all local files needed to run offline
 const SHELL = [

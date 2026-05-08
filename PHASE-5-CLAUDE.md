@@ -1,3 +1,18 @@
+# Phase 5 — Invest Tab Refactor
+## Instructions for Claude Code
+
+Apply every change below in order. Make all file edits exactly as described.
+After all changes are applied, confirm each file was saved and run a quick
+sanity check: open index.html in a browser, click the Invest tab, and confirm
+it loads instantly with no console errors.
+
+---
+
+## 1. CREATE new file: `js/modules/invest.js`
+
+Create this file at exactly that path with the following content:
+
+```js
 // ══════════════════════════════════════
 // INVEST MODULE — Phase 5
 // Static investment plan engine. Zero API calls.
@@ -178,3 +193,135 @@ export function loadInvest() {
   renderFunds(pickFunds(surplus, totalDebt, ioDebt));
   renderIdeas();
 }
+```
+
+---
+
+## 2. EDIT `js/app.js`
+
+### 2a. Remove the invest-tab import line and the three functions that follow it
+
+Find and DELETE this entire block (from the comment through the closing brace of `renderInvPlan`):
+
+```
+// ── Invest tab (Phase 5 will clean this up)
+import { mktLoaded, setMktLoaded, getTotalExp } from './state.js';
+
+// ══════════════════════════════════════
+// INVEST TAB (Phase 5 will refactor this)
+// ══════════════════════════════════════
+async function loadInvest() {
+```
+
+…all the way to the end of `renderInvPlan(plan) { … }` (the function that renders steps, alloc chart, fund list, and ideas).
+
+### 2b. Replace with a single import line
+
+Insert this immediately before the `// ══════════════════════ AI CHAT` comment:
+
+```js
+// ── Phase 5: static invest module ──
+import { loadInvest } from './modules/invest.js';
+```
+
+> **Note:** `getTotalExp` is already imported from `./state.js` in the existing imports at the top of the file — do not add a duplicate import.
+
+---
+
+## 3. EDIT `js/state.js`
+
+Find and DELETE these two lines (they are together, near the top of the mutable-refs block):
+
+```js
+export let mktLoaded = false;
+export function setMktLoaded(v) { mktLoaded = v; }
+```
+
+Nothing replaces them.
+
+---
+
+## 4. EDIT `index.html` — replace the entire `pg-invest` page div
+
+Find the block that starts with:
+```html
+<div id="pg-invest" class="page">
+```
+and ends with its closing `</div>` (after the `ei-list` div).
+
+Replace the **entire** block with:
+
+```html
+<!-- ════ INVEST ════ -->
+<div id="pg-invest" class="page">
+
+  <div class="cb-info mb1" id="mkt-note" style="font-size:.74rem">
+    💡 Add your income and expenses to see your personalised plan.
+  </div>
+
+  <div class="g2 mb1">
+    <div class="card">
+      <div class="sh"><div class="shdot" style="background:var(--amber)"></div>Your Investment Plan</div>
+      <div id="inv-steps"><div class="empty xxs">Add income &amp; expenses to generate your plan.</div></div>
+    </div>
+    <div class="card">
+      <div class="sh"><div class="shdot" style="background:var(--lime)"></div>Suggested Allocation</div>
+      <canvas id="alloc-c" style="max-height:170px"></canvas>
+      <div id="alloc-leg" class="flex wrap gap4 mt1"></div>
+    </div>
+  </div>
+
+  <div class="card mb1">
+    <div class="sh"><div class="shdot" style="background:var(--sky)"></div>Recommended Funds</div>
+    <div id="fund-list"><div class="empty xxs">Loading fund picks…</div></div>
+  </div>
+
+  <div class="card">
+    <div class="sh"><div class="shdot" style="background:var(--rose)"></div>Boost Your Income</div>
+    <div id="ei-list"></div>
+  </div>
+
+</div>
+```
+
+---
+
+## 5. EDIT `css/components.css` — remove the ticker CSS block
+
+Find and DELETE the entire ticker section. It starts with:
+```css
+/* ═══════════════════════════════
+   TICKER
+═══════════════════════════════ */
+```
+and ends after `@keyframes tk{from{transform:translateX(0)}to{transform:translateX(-50%)}}`.
+
+Nothing replaces it.
+
+---
+
+## 6. EDIT `PROGRESS.md` — mark Phase 5 complete
+
+Find:
+```
+| 5 | Remove Market Data, Restructure Invest | Pending | js/modules/invest.js |
+```
+
+Replace with:
+```
+| 5 | Remove Market Data, Restructure Invest | DONE    | js/modules/invest.js |
+```
+
+Also find the `### Phase 5: Invest Tab` section (if present) and update its checklist items to `[x]`.
+
+---
+
+## 7. Verify
+
+After all edits:
+
+1. Open `index.html` in a browser (or live server).
+2. Click **💰 Invest** tab.
+3. Confirm: tab loads instantly, no "Loading…" spinner, no console errors.
+4. Enter an income value in Overview → return to Invest — the note at the top should update with your surplus.
+5. Confirm the ticker strip is gone from the top of the Invest tab.

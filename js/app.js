@@ -22,8 +22,8 @@ import { genReport, printReport, downloadPDF } from './modules/reports.js';
 import { dov, dol, dod, hStmt } from './modules/statements.js';
 import { genMilestones } from './modules/milestones.js';
 
-// ── Phase 5 modules ──
-import { renderInvPlan } from './modules/invest.js';
+// ── Phase 5: static invest module ──
+import { loadInvest } from './modules/invest.js';
 
 // ── Phase 6 modules ──
 import { sq, sendMsg, toggleApiKeyPanel, applyApiKey, clearApiKeyUI } from './modules/ai.js';
@@ -36,7 +36,7 @@ function sw(t, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
   el.classList.add('on');
   document.getElementById('pg-' + t).classList.add('on');
-  if (t === 'invest') renderInvPlan();
+  if (t === 'invest') loadInvest();
   if (t === 'milestones') genMilestones();
   if (t === 'sip') renderSIPs();
   if (t === 'daily') { buildMonthFilter(); renderDex(); }

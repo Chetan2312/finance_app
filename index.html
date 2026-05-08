@@ -181,13 +181,33 @@
 
 <!-- ════ INVEST ════ -->
 <div id="pg-invest" class="page">
-  <div class="cb-sky mb1">📊 <strong>Investment plan generated locally</strong> — based on your income, expenses, debts, and SIPs. No external data needed.</div>
-  <div class="g2 mb1">
-    <div class="card"><div class="sh"><div class="shdot" style="background:var(--amber)"></div>Step-by-Step Plan</div><div id="inv-steps"><div class="empty xxs">Generating your plan...</div></div></div>
-    <div class="card"><div class="sh"><div class="shdot" style="background:var(--lime)"></div>Asset Allocation</div><canvas id="alloc-c" style="max-height:170px"></canvas><div id="alloc-leg" class="flex wrap gap4 mt1"></div></div>
+
+  <div class="cb-info mb1" id="mkt-note" style="font-size:.74rem">
+    💡 Add your income and expenses to see your personalised plan.
   </div>
-  <div class="card mb1"><div class="sh"><div class="shdot" style="background:var(--sky)"></div>Recommended Funds</div><div id="fund-list"><div class="empty xxs">Loading...</div></div></div>
-  <div class="card"><div class="sh"><div class="shdot" style="background:var(--rose)"></div>Extra Income Ideas</div><div id="ei-list"><div class="empty xxs">Loading...</div></div></div>
+
+  <div class="g2 mb1">
+    <div class="card">
+      <div class="sh"><div class="shdot" style="background:var(--amber)"></div>Your Investment Plan</div>
+      <div id="inv-steps"><div class="empty xxs">Add income &amp; expenses to generate your plan.</div></div>
+    </div>
+    <div class="card">
+      <div class="sh"><div class="shdot" style="background:var(--lime)"></div>Suggested Allocation</div>
+      <canvas id="alloc-c" style="max-height:170px"></canvas>
+      <div id="alloc-leg" class="flex wrap gap4 mt1"></div>
+    </div>
+  </div>
+
+  <div class="card mb1">
+    <div class="sh"><div class="shdot" style="background:var(--sky)"></div>Recommended Funds</div>
+    <div id="fund-list"><div class="empty xxs">Loading fund picks…</div></div>
+  </div>
+
+  <div class="card">
+    <div class="sh"><div class="shdot" style="background:var(--rose)"></div>Boost Your Income</div>
+    <div id="ei-list"></div>
+  </div>
+
 </div>
 
 <!-- ════ DAILY EXPENSES ════ -->

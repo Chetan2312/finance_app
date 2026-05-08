@@ -28,6 +28,10 @@ import { loadInvest } from './modules/invest.js';
 // ── Phase 6 modules ──
 import { sq, sendMsg, toggleApiKeyPanel, applyApiKey, clearApiKeyUI } from './modules/ai.js';
 
+// ── v8 modules ──
+import { initAuth, setAuthCallbacks, setAuthRcFn, showAuthModal } from './modules/auth.js';
+import { renderHousehold, initHouseholdWindowBindings, setRcFn as setHhRc } from './modules/household.js';
+
 // ══════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════
@@ -36,7 +40,8 @@ function sw(t, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
   el.classList.add('on');
   document.getElementById('pg-' + t).classList.add('on');
-  if (t === 'invest') loadInvest();
+  if (t === 'invest')    loadInvest();
+  if (t === 'household') renderHousehold();
   if (t === 'milestones') genMilestones();
   if (t === 'sip') renderSIPs();
   if (t === 'daily') { buildMonthFilter(); renderDex(); }
@@ -89,6 +94,23 @@ async function init() {
   document.addEventListener('input', e => {
     if (['s-inc', 's-xi', 's-sav', 's-xp'].includes(e.target.id)) { sv(); rc(); }
   });
+
+  // v8: household + auth
+  initHouseholdWindowBindings();
+  setHhRc(rc);
+  setAuthCallbacks(
+    async (user, hhId) => { renderHousehold(); },
+    () => { renderHousehold(); }
+  );
+  setAuthRcFn(rc);
+  initAuth();
+
+  // Handle ?join=CODE deep links
+  const joinCode = new URLSearchParams(location.search).get('join');
+  if (joinCode) {
+    history.replaceState({}, '', location.pathname);
+    sessionStorage.setItem('pending_join_code', joinCode);
+  }
 }
 
 // ══════════════════════════════════════
@@ -117,6 +139,9 @@ Object.assign(window, {
   openMo, cmo, pickEm,
   // Navigation
   sw,
+  // Auth + Household
+  showAuthModal,
+  renderHousehold,
   // Core
   sv, rc,
   // Data export/import (Phase 8)

@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuth()      { return request.auth != null; }
+    function isOwn(uid)    { return request.auth.uid == uid; }
+    function isMember(hhId) {
+      return isAuth() && exists(
+        /databases/$(database)/documents/households/$(hhId)/memberships/$(request.auth.uid)
+      );
+    }
+    function isOwner(hhId) {
+      return isAuth() &&
+        get(/databases/$(database)/documents/households/$(hhId)).data.ownerId == request.auth.uid;
+    }
+
+    // User profiles — any auth'd user can read (for name display), own write only
+    match /users/{uid} {
+      allow read:  if isAuth();
+      allow write: if isAuth() && isOwn(uid);
+    }
+
+    // Pair codes — any auth'd user can read (needed to join) or mark used; members create
+    match /pair_codes/{code} {
+      allow read:   if isAuth();
+      allow create: if isAuth();
+      allow update: if isAuth();
+    }
+
+    // Households
+    match /households/{hhId} {
+      allow read:   if isMember(hhId);
+      allow create: if isAuth();
+      allow update: if isMember(hhId);
+      allow delete: if isOwner(hhId);
+
+      // Memberships — members read all; users write their own record only
+      match /memberships/{uid} {
+        allow read:   if isMember(hhId) || isAuth();
+        allow create: if isAuth() && isOwn(uid);
+        allow update: if isAuth() && (isOwn(uid) || isOwner(hhId));
+        allow delete: if isOwner(hhId) || (isAuth() && isOwn(uid));
+      }
+
+      // Finance profiles — members read; only owner writes own profile
+      match /profiles/{uid} {
+        allow read:  if isMember(hhId);
+        allow write: if isAuth() && isOwn(uid);
+      }
+    }
+  }
+}

@@ -11,12 +11,53 @@ export let S = {
   debts: [], sips: [], expSecs: [], custSecs: [],
   dailyExps: [], dailyCats: [],
   chatHist: [], strat: 'avalanche', theme: 'dark',
+  householdId: null, userId: null, members: [],
 };
 
 // Mutable refs used by various modules
 export let iCtx = { sid: null, isEmi: false };
 export let charts = { sip: null, alloc: null, stmt: null };
 export let rptCharts = { bar: null, donut: null };
+
+// Firestore sync unsub handles
+let _unsubProfile = null;
+let _unsubMembers = null;
+
+export async function startSync(householdId, userId, onUpdate) {
+  stopSync();
+  S.householdId = householdId;
+  S.userId      = userId;
+  let _db, _onSnapshot, _PATHS;
+  try {
+    const fb    = await import('./firebase.js');
+    _db         = fb.db;
+    _onSnapshot = fb.onSnapshot;
+    _PATHS      = fb.PATHS;
+  } catch(e) { console.warn('[state] Firebase not ready', e); return; }
+
+  // Listen to own profile
+  _unsubProfile = _onSnapshot(_PATHS.profile(householdId, userId), snap => {
+    if (!snap.exists()) return;
+    const d = snap.data();
+    if (d.debts)     S.debts     = d.debts;
+    if (d.sips)      S.sips      = d.sips;
+    if (d.expSecs)   S.expSecs   = d.expSecs;
+    if (d.dailyExps) S.dailyExps = d.dailyExps;
+    if (d.dailyCats) S.dailyCats = d.dailyCats;
+    if (onUpdate) onUpdate('profile');
+  });
+
+  // Listen to household memberships
+  _unsubMembers = _onSnapshot(_PATHS.memberships(householdId), snap => {
+    S.members = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+    if (onUpdate) onUpdate('members');
+  });
+}
+
+export function stopSync() {
+  if (_unsubProfile) { _unsubProfile(); _unsubProfile = null; }
+  if (_unsubMembers) { _unsubMembers(); _unsubMembers = null; }
+}
 // Emoji state for modals
 export let sEm = '✨', secEm = '✨', dcEm = '☕';
 export function setSEm(v) { sEm = v; }
@@ -39,8 +80,17 @@ export function sv() {
       inc: gv('s-inc'), xi: gv('s-xi'), sav: gv('s-sav'), xp: gv('s-xp'),
       debts: S.debts, sips: S.sips, expSecs: S.expSecs, custSecs: S.custSecs,
       dailyExps: S.dailyExps, dailyCats: S.dailyCats,
-      strat: S.strat, theme: S.theme, chatHist: S.chatHist.slice(-20)
+      strat: S.strat, theme: S.theme, chatHist: S.chatHist.slice(-20),
+      householdId: S.householdId,
     };
+    // Also push to Firestore if signed in + in a household
+    if (S.householdId && S.userId) {
+      import('./firebase.js').then(({ db, PATHS, setDoc, serverTimestamp }) => {
+        setDoc(PATHS.profile(S.householdId, S.userId), {
+          ...payload, updatedAt: serverTimestamp(),
+        }, { merge: true }).catch(e => console.warn('[sv] Firestore write failed', e));
+      });
+    }
     saveData(payload).then(() => {
       b.classList.remove('busy');
       document.getElementById('sv-txt').textContent = 'SAVED';
@@ -63,6 +113,7 @@ export function applyFromData(d, applyThemeFn) {
   S.expSecs = d.expSecs || []; S.custSecs = d.custSecs || [];
   S.dailyExps = d.dailyExps || []; S.dailyCats = d.dailyCats || [];
   S.strat = d.strat || 'avalanche'; S.chatHist = d.chatHist || [];
+  S.householdId = d.householdId || null;
   if (d.theme) { S.theme = d.theme; applyThemeFn(d.theme); }
 }
 

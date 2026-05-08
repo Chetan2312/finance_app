@@ -87,30 +87,36 @@
 <header class="hdr">
   <div class="logo">
     <div class="logo-mark">FinanceFreedom</div>
-    <div class="logo-sub">// WEALTH OS · v7 · 100% LOCAL</div>
+    <div class="logo-sub">// WEALTH OS · v8 · LOCAL + SYNC</div>
   </div>
   <div class="hdr-r">
     <div class="sav-badge" id="sv-badge"><span class="sav-dot"></span><span id="sv-txt">SAVED</span></div>
-    <button class="ico-btn" onclick="exportData()" title="Export backup JSON">⬇️</button>
-    <label class="ico-btn" title="Import backup JSON" style="cursor:pointer">
-      ⬆️<input type="file" accept=".json" style="display:none" onchange="importData(this.files[0]);this.value=''">
-    </label>
     <button class="ico-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle theme">🌙</button>
+    <button class="btn bg bsm" id="hdr-auth-btn" onclick="showAuthModal()"
+      style="font-family:var(--fm);font-size:.6rem;letter-spacing:.06em">SIGN IN</button>
+    <div id="hdr-user" style="display:none;align-items:center;gap:.4rem">
+      <div class="sav-badge" style="background:var(--info-s);color:var(--p2);border-color:rgba(124,115,230,.3)">
+        <span class="sav-dot" style="background:var(--p2)"></span>
+        <span id="hdr-user-name">—</span>
+      </div>
+      <button class="ico-btn bsm" onclick="signOutUser()" title="Sign out" style="font-size:.7rem">⏻</button>
+    </div>
   </div>
 </header>
 
 <nav class="nav">
   <button class="ntab on" onclick="sw('overview',this)">📊 Overview</button>
-  <button class="ntab" onclick="sw('expenses',this)">💸 Expenses</button>
-  <button class="ntab" onclick="sw('debts',this)">💳 Debts</button>
-  <button class="ntab" onclick="sw('sip',this)">📈 SIPs</button>
-  <button class="ntab" onclick="sw('invest',this)">💰 Invest</button>
-  <button class="ntab" onclick="sw('daily',this)">🗓 Daily</button>
-  <button class="ntab" onclick="sw('milestones',this)">🎯 Milestones</button>
-  <button class="ntab" onclick="sw('budget',this)">🧮 Budget</button>
-  <button class="ntab" onclick="sw('reports',this)">📋 Reports</button>
-  <button class="ntab" onclick="sw('statements',this)">🏦 Statements</button>
-  <button class="ntab" onclick="sw('ai',this)">🤖 AI</button>
+  <button class="ntab"    onclick="sw('expenses',this)">💸 Expenses</button>
+  <button class="ntab"    onclick="sw('debts',this)">💳 Debts</button>
+  <button class="ntab"    onclick="sw('sip',this)">📈 SIPs</button>
+  <button class="ntab"    onclick="sw('invest',this)">💰 Invest</button>
+  <button class="ntab"    onclick="sw('daily',this)">🗓 Daily</button>
+  <button class="ntab"    onclick="sw('milestones',this)">🎯 Milestones</button>
+  <button class="ntab"    onclick="sw('budget',this)">🧮 Budget</button>
+  <button class="ntab"    onclick="sw('reports',this)">📋 Reports</button>
+  <button class="ntab"    onclick="sw('statements',this)">🏦 Statements</button>
+  <button class="ntab"    onclick="sw('household',this)">👥 Household</button>
+  <button class="ntab"    onclick="sw('ai',this)">🤖 AI</button>
 </nav>
 
 <div class="wrap">
@@ -361,7 +367,76 @@
   </div>
 </div>
 
+<!-- ════ HOUSEHOLD ════ -->
+<div id="pg-household" class="page">
+  <!-- Rendered by js/modules/household.js -->
+</div>
+
 </div><!-- /wrap -->
+
+<!-- Invisible recaptcha container (required for Phone OTP) -->
+<div id="recaptcha-container"></div>
+
+<!-- AUTH MODAL — Phone OTP -->
+<div class="ovl" id="mo-auth">
+  <div class="modal" style="max-width:380px">
+
+    <!-- Step 1: phone number -->
+    <div id="auth-step-phone">
+      <div class="mo-t">📱 Sign in with phone</div>
+      <p class="xxs c-muted" style="margin-bottom:.9rem;line-height:1.65">
+        Enter your mobile number. We'll send a one-time code via SMS.
+      </p>
+      <div class="fi">
+        <label>Phone number</label>
+        <div style="display:flex;align-items:center;gap:.4rem">
+          <span style="font-family:var(--fm);font-size:.85rem;color:var(--t2);padding:.55rem .7rem;background:var(--s1);border:1.5px solid var(--b1);border-radius:var(--rm);white-space:nowrap">+91</span>
+          <input id="auth-phone" type="tel" placeholder="98765 43210" autocomplete="tel"
+            style="flex:1" onkeydown="if(event.key==='Enter')sendOTP()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: OTP -->
+    <div id="auth-step-otp" style="display:none">
+      <div class="mo-t">🔐 Enter OTP</div>
+      <p class="xxs c-muted" style="margin-bottom:.9rem;line-height:1.65">
+        Check your SMS. Enter the 6-digit code below.
+      </p>
+      <div class="fi">
+        <label>Verification code</label>
+        <input id="auth-otp" type="number" placeholder="123456"
+          style="font-family:var(--fm);font-size:1.4rem;letter-spacing:.18em;text-align:center"
+          onkeydown="if(event.key==='Enter')verifyOTP()">
+      </div>
+      <div class="xxs c-muted" style="margin-bottom:.5rem">
+        Wrong number? <button class="btn bg bxs" onclick="document.getElementById('auth-step-phone').style.display='block';document.getElementById('auth-step-otp').style.display='none'">← Back</button>
+      </div>
+    </div>
+
+    <!-- Step 3: name (first time only) -->
+    <div id="auth-step-name" style="display:none">
+      <div class="mo-t">✨ What's your name?</div>
+      <p class="xxs c-muted" style="margin-bottom:.9rem;line-height:1.65">
+        This is shown to your household members.
+      </p>
+      <div class="fi">
+        <label>Your name</label>
+        <input id="auth-name" placeholder="e.g. Aakash" autocomplete="name"
+          onkeydown="if(event.key==='Enter')saveName()">
+      </div>
+    </div>
+
+    <div id="auth-error" class="cb-dan xxs" style="display:none;margin-bottom:.5rem"></div>
+    <div class="mo-ft">
+      <button class="btn bp" style="flex:1" id="auth-submit-btn" onclick="submitAuth()">Send OTP</button>
+      <button class="btn bg" onclick="hideAuthModal()">Cancel</button>
+    </div>
+    <div class="ib xxs" style="margin-top:.75rem;line-height:1.6">
+      🔒 Your financial data stays on your device. Sign-in only enables sync with people you explicitly pair with.
+    </div>
+  </div>
+</div>
 
 <script type="module" src="js/app.js"></script>
 <script>

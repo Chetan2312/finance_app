@@ -345,3 +345,30 @@ input[type=number] { -moz-appearance:textfield }
   min-width:160px;
 }
 #pair-code-val:hover { border-color:var(--p); }
+
+/* ═══════════════════════════════
+   LOGIN PAGE
+═══════════════════════════════ */
+#login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: var(--bg);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--bg2);
+  border: 1.5px solid var(--b1);
+  border-radius: var(--rl);
+  padding: 2rem 2rem 1.75rem;
+  box-shadow: 0 8px 40px rgba(0,0,0,.35);
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}

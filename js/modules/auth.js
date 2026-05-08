@@ -215,50 +215,43 @@ export function initAuth() {
         S.householdId = hhId;
         await startSync(hhId, user.uid, () => { _rcFn(); });
       }
-      _updateHeaderUI(user);
-      hideAuthModal();
+      _showApp(user);
       await _onSignedIn(user, hhId);
     } else {
       S.userId = null; S.householdId = null; S.members = [];
       stopSync();
-      _updateHeaderUI(null);
+      _showLoginPage();
       _onSignedOut();
     }
   });
 }
 
 // ══════════════════════════════════════
-// MODAL
+// PAGE GATE
 // ══════════════════════════════════════
-export function showAuthModal() {
-  const mo = document.getElementById('mo-auth');
-  if (!mo) return;
-  mo.classList.add('on');
-  // Reset to phone tab
+function _showApp(user) {
+  document.getElementById('login-page').style.display  = 'none';
+  document.getElementById('app-shell').style.display   = '';
+  const name = document.getElementById('hdr-user-name');
+  if (name) name.textContent = user.displayName || user.email || user.phoneNumber || 'You';
+}
+
+function _showLoginPage() {
+  document.getElementById('app-shell').style.display  = 'none';
+  document.getElementById('login-page').style.display = '';
   switchAuthTab('phone');
   _authErr('');
 }
 
-export function hideAuthModal() {
-  document.getElementById('mo-auth')?.classList.remove('on');
-}
+// Keep showAuthModal as no-op (called from app.js window bindings — no longer needed)
+export function showAuthModal() {}
+export function hideAuthModal() {}
 
 // ══════════════════════════════════════
 // INTERNAL HELPERS
 // ══════════════════════════════════════
-function _updateHeaderUI(user) {
-  const btn  = document.getElementById('hdr-auth-btn');
-  const area = document.getElementById('hdr-user');
-  const name = document.getElementById('hdr-user-name');
-  if (!btn) return;
-  if (user) {
-    btn.style.display = 'none';
-    if (area) area.style.display = 'flex';
-    if (name) name.textContent = user.displayName || user.email || user.phoneNumber || 'You';
-  } else {
-    btn.style.display = '';
-    if (area) area.style.display = 'none';
-  }
+function _updateHeaderUI(_user) {
+  // No-op — gating handled by _showApp / _showLoginPage
 }
 
 function _setAuthBtn(label, disabled) {

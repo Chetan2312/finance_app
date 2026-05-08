@@ -4,8 +4,12 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
   getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
   RecaptchaVerifier,
   signInWithPhoneNumber,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   updateProfile,
@@ -46,9 +50,13 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db   = getFirestore(app);
 
+export const googleProvider = new GoogleAuthProvider();
+
 export {
-  RecaptchaVerifier, signInWithPhoneNumber, signOut,
-  onAuthStateChanged, updateProfile,
+  GoogleAuthProvider, signInWithPopup,
+  RecaptchaVerifier, signInWithPhoneNumber,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signOut, onAuthStateChanged, updateProfile,
   doc, getDoc, setDoc, updateDoc, addDoc, deleteDoc,
   collection, query, where, orderBy, limit,
   onSnapshot, getDocs, serverTimestamp, Timestamp,

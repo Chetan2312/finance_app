@@ -1,7 +1,7 @@
 // ══════════════════════════════════════
 // js/modules/sms.js — Bank SMS auto-import
-// Parses Indian bank SMS text → daily expense entries
-// Supports: HDFC, SBI, ICICI, Axis, Kotak, Paytm, Yes, IndusInd
+// Universal parser — works on any Indian bank debit SMS.
+// Strategy: signal words → extract amount + payee, no bank-specific rules.
 // ══════════════════════════════════════
 import { fmt, today } from '../utils.js';
 import { S, sv } from '../state.js';
@@ -9,114 +9,164 @@ import { S, sv } from '../state.js';
 let _rcFn = () => {};
 export function setRcFn(fn) { _rcFn = fn; }
 
-// ── Parser patterns ──────────────────────────────────────────
-// Each rule: { bank, regex, extract(match) → { amt, merchant, type } }
-const RULES = [
-  // HDFC: "Rs.500.00 debited from a/c XX1234 on 01-Jan-25 trf to SWIGGY"
-  { bank: 'HDFC',
-    re: /(?:Rs\.?|INR\s*)(\d[\d,]*\.?\d*)\s*(?:debited|deducted|spent)/i,
-    merchant: /(?:trf to|at|to)\s+([A-Z][A-Z0-9 &._/-]{1,30})/i },
+// ── Noise tokens to strip from extracted merchant names ───────
+const NOISE = /\b(bank|a\/c|ac|acct|account|avl|bal|balance|upi|ref|refno|txn|transaction|neft|imps|rtgs|transfer|if not|call|helpline|for queries|customer care|services|info|dear|user|your|has been|is|was|the|on|date|time|from|towards|card|credit|debit|saving|current|salary|linked)\b/gi;
 
-  // ICICI: "INR 250.00 spent on ICICI Bank Credit Card XX9876 at AMAZON"
-  { bank: 'ICICI',
-    re: /INR\s*(\d[\d,]*\.?\d*)\s*(?:spent|debited|deducted)/i,
-    merchant: /\bat\s+([A-Z][A-Z0-9 &._/-]{1,30})/i },
-
-  // SBI: "Your a/c no. XX7890 is debited by Rs 1200.00 on 01JAN25. Info: UPI-PHONEPE"
-  { bank: 'SBI',
-    re: /debited\s+by\s+Rs\.?\s*(\d[\d,]*\.?\d*)/i,
-    merchant: /Info:\s*([A-Z0-9][A-Z0-9 &._/-]{1,30})/i },
-
-  // Axis: "INR 399.00 has been debited from Axis Bank A/c XX4321 towards NETFLIX"
-  { bank: 'Axis',
-    re: /INR\s*(\d[\d,]*\.?\d*)\s*has been debited/i,
-    merchant: /towards\s+([A-Z][A-Z0-9 &._/-]{1,30})/i },
-
-  // Kotak: "Rs.800 debited from Kotak Bank Ac XXXXXX1234 for UPI txn ZOMATO"
-  { bank: 'Kotak',
-    re: /Rs\.?\s*(\d[\d,]*\.?\d*)\s*debited from Kotak/i,
-    merchant: /(?:for UPI txn|to)\s+([A-Z][A-Z0-9 &._/-]{1,30})/i },
-
-  // Paytm/UPI generic: "Paid Rs.150 to CAFE COFFEE DAY"
-  { bank: 'UPI',
-    re: /(?:Paid|paid|Sent|sent)\s+(?:Rs\.?|INR\s*)(\d[\d,]*\.?\d*)\s*(?:to|at)/i,
-    merchant: /(?:to|at)\s+([A-Za-z][A-Za-z0-9 &._/-]{1,30})/i },
-
-  // Generic debit fallback: "debited Rs 500 UPI ref"
-  { bank: 'Generic',
-    re: /(?:debited|deducted)\s+(?:Rs\.?|INR)?\s*(\d[\d,]*\.?\d*)/i,
-    merchant: /(?:UPI-|ref\s+|at\s+)([A-Z][A-Z0-9 &._/-]{1,20})/i },
+// Payee-introducing keywords — text after these is the merchant
+const PAYEE_TRIGGERS = [
+  /\btrf(?:\s+to)?\s+/i,
+  /\btowards\s+/i,
+  /\bat\s+/i,
+  /\bto\s+/i,
+  /\bInfo:\s*/i,
+  /\bfor\s+(?:UPI\s+txn\s+)?/i,
+  /\bVPA\s+/i,
+  /\bpayee\s+/i,
 ];
 
-// Date patterns within SMS
-const DATE_RE = [
-  /(\d{2})[/-](\w{3})[/-](\d{2,4})/,   // 01-Jan-25
-  /(\d{2})[/-](\d{2})[/-](\d{2,4})/,   // 01/01/2025
-  /(\d{1,2})\s+(\w{3})\s+(\d{2,4})/,   // 1 Jan 2025
-  /(\d{8})/,                             // 20250101
-];
+// Terminals — stop extracting merchant name at these
+const PAYEE_STOP = /\s+(?:Refno|Ref No|UPI Ref|txn id|transaction|avl|bal|balance|if not|call|rs\.?|inr|\d{6,}|\.)/i;
+
+// Words that are definitely NOT merchant names
+const NOT_MERCHANT = /^(upi|neft|imps|rtgs|sbi|hdfc|icici|axis|kotak|yes|indusind|paytm|phonepe|gpay|bank|a\/c|xx|ref|txn|on|at|by|to|the|for|has|been|is|was|your|dear|not|if|call|services?|queries|care|info|avl|bal|balance|saving|current|salary)$/i;
 
 const MON = { jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11 };
 
-function _parseAmt(s) {
-  return parseFloat(s.replace(/,/g, '')) || 0;
+// ── Amount extraction ─────────────────────────────────────────
+// Collects ALL numeric values, then picks the most likely debit amount:
+// - Has a currency signal nearby (Rs/INR/₹) → prefer that
+// - Otherwise: not a 10-digit phone, not a 4-6 digit OTP/PIN,
+//   not an 8+ digit ref number → pick the one right after a debit keyword
+function _extractAmt(sms) {
+  // 1. Explicit currency-tagged amount
+  let m = sms.match(/(?:Rs\.?|INR|₹)\s*(\d[\d,]*(?:\.\d{1,2})?)/i);
+  if (m) return parseFloat(m[1].replace(/,/g, ''));
+
+  // 2. Amount adjacent to a debit signal word
+  m = sms.match(/(?:debited|deducted|spent|paid|sent)\s+(?:by\s+)?(\d[\d,]*(?:\.\d{1,2})?)/i);
+  if (m) {
+    const v = parseFloat(m[1].replace(/,/g, ''));
+    // Reject if it looks like a ref/phone number (too many digits, no decimal)
+    if (v > 0 && (m[1].includes('.') || m[1].replace(/,/g,'').length <= 7)) return v;
+  }
+
+  // 3. Amount before a debit signal word  e.g. "374.00 debited"
+  m = sms.match(/(\d[\d,]*\.\d{1,2})\s*(?:debited|deducted|spent)/i);
+  if (m) return parseFloat(m[1].replace(/,/g, ''));
+
+  return 0;
 }
 
-function _parseDate(sms) {
-  for (const re of DATE_RE) {
-    const m = sms.match(re);
-    if (!m) continue;
-    try {
-      if (re === DATE_RE[3]) {
-        const s = m[1];
-        return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
-      }
-      const [, a, b, c] = m;
-      const mo = MON[b.toLowerCase().slice(0,3)];
-      if (mo !== undefined) {
-        const yr = c.length === 2 ? '20' + c : c;
-        return `${yr}-${String(mo + 1).padStart(2,'0')}-${a.padStart(2,'0')}`;
-      }
-      // numeric dd/mm/yy
-      const yr2 = c.length === 2 ? '20' + c : c;
-      return `${yr2}-${b.padStart(2,'0')}-${a.padStart(2,'0')}`;
-    } catch (_) {}
+// ── Merchant/payee extraction ─────────────────────────────────
+function _extractMerchant(sms) {
+  for (const trigger of PAYEE_TRIGGERS) {
+    const idx = sms.search(trigger);
+    if (idx === -1) continue;
+    // Move past the trigger keyword
+    const afterTrigger = sms.slice(idx).replace(trigger, '');
+    // Cut at terminal token
+    const chunk = afterTrigger.split(PAYEE_STOP)[0].trim();
+    if (!chunk) continue;
+    // Take first 1-4 words, skip noise/bank tokens
+    const words = chunk.split(/\s+/)
+      .filter(w => w.length > 1 && !NOT_MERCHANT.test(w))
+      .slice(0, 4);
+    if (words.length) return words.join(' ').slice(0, 35);
   }
+
+  // Fallback: look for a UPI VPA  e.g. merchant@upi
+  const vpa = sms.match(/([a-z0-9._-]+@[a-z]+)/i);
+  if (vpa) return vpa[1].split('@')[0]; // e.g. "swiggy" from "swiggy@icici"
+
+  return '';
+}
+
+// ── Date extraction ───────────────────────────────────────────
+function _parseDate(sms) {
+  let m;
+  // DDMonYY(YY) — no separator e.g. 06May26
+  m = sms.match(/\b(\d{1,2})([A-Za-z]{3})(\d{2,4})\b/);
+  if (m) {
+    const mo = MON[m[2].toLowerCase()];
+    if (mo !== undefined) {
+      const yr = m[3].length === 2 ? '20' + m[3] : m[3];
+      return `${yr}-${String(mo + 1).padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    }
+  }
+  // DD-Mon-YY or DD/Mon/YYYY
+  m = sms.match(/(\d{1,2})[/-]([A-Za-z]{3})[/-](\d{2,4})/);
+  if (m) {
+    const mo = MON[m[2].toLowerCase()];
+    if (mo !== undefined) {
+      const yr = m[3].length === 2 ? '20' + m[3] : m[3];
+      return `${yr}-${String(mo + 1).padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    }
+  }
+  // DD/MM/YYYY or DD-MM-YY
+  m = sms.match(/(\d{2})[/-](\d{2})[/-](\d{2,4})/);
+  if (m) {
+    const yr = m[3].length === 2 ? '20' + m[3] : m[3];
+    return `${yr}-${m[2]}-${m[1]}`;
+  }
+  // D Mon YYYY
+  m = sms.match(/(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})/);
+  if (m) {
+    const mo = MON[m[2].toLowerCase().slice(0, 3)];
+    if (mo !== undefined) return `${m[3]}-${String(mo + 1).padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  }
+  // YYYYMMDD
+  m = sms.match(/\b(20\d{2})(\d{2})(\d{2})\b/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+
   return today();
 }
 
-function _cleanMerchant(s) {
-  return (s || 'Unknown')
-    .replace(/\s+/g, ' ')
-    .replace(/[^A-Za-z0-9 &._/-]/g, '')
-    .trim()
-    .slice(0, 30);
+// ── Is this a debit SMS? ──────────────────────────────────────
+const DEBIT_SIGNALS  = /debited|deducted|spent|withdrawn|paid|sent|purchase|payment made/i;
+const CREDIT_SIGNALS = /credited|received|deposited|added|refund/i;
+
+function _isDebit(sms) {
+  const hasDebit  = DEBIT_SIGNALS.test(sms);
+  const hasCredit = CREDIT_SIGNALS.test(sms);
+  // If both present (e.g. "refund credited after debit"), still treat as debit
+  return hasDebit;
 }
 
+function _cleanMerchant(s) {
+  return (s || '')
+    .replace(NOISE, ' ')
+    .replace(/[^A-Za-z0-9 &._@/-]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 35);
+}
+
+// ── Public: parse one or many SMS blocks ──────────────────────
 export function parseSMS(text) {
   const results = [];
-  // Split on newlines — each line may be a separate SMS
-  const lines = text.split(/\n{2,}|\r\n\r\n/).map(l => l.trim()).filter(Boolean);
-  const blocks = lines.length > 1 ? lines : [text];
+  // Split multiple SMS — separated by blank lines or obvious SMS boundary
+  const blocks = text
+    .split(/\n{2,}|\r\n\r\n/)
+    .map(b => b.trim())
+    .filter(Boolean);
+  // If no blank lines, treat whole thing as one SMS
+  const list = blocks.length ? blocks : [text.trim()];
 
-  for (const block of blocks) {
-    for (const rule of RULES) {
-      const amtM = block.match(rule.re);
-      if (!amtM) continue;
-      const amt = _parseAmt(amtM[1]);
-      if (!amt || amt <= 0) continue;
+  for (const block of list) {
+    if (!_isDebit(block)) continue;
 
-      // Skip credit/received messages
-      if (/credited|received|added|deposited/i.test(block) &&
-          !/debited|spent|deducted|paid|sent/i.test(block)) continue;
+    const amt = _extractAmt(block);
+    if (!amt || amt <= 0) continue;
 
-      const mercM = block.match(rule.merchant);
-      const merchant = _cleanMerchant(mercM?.[1] || rule.bank);
-      const date = _parseDate(block);
+    const raw      = _extractMerchant(block);
+    const merchant = _cleanMerchant(raw) || 'Debit';
+    const date     = _parseDate(block);
 
-      results.push({ amt, merchant, date, bank: rule.bank, raw: block.slice(0, 80) });
-      break;
-    }
+    // Detect bank name for the badge (best-effort, cosmetic only)
+    const bankM = block.match(/\b(HDFC|SBI|ICICI|Axis|Kotak|Yes Bank|IndusInd|PNB|BOB|Canara|Union|IDFC|AU|Federal|Karnataka|UCO|IOB|Paytm|PhonePe|GPay|Razorpay)\b/i);
+    const bank  = bankM ? bankM[1].toUpperCase() : 'Bank';
+
+    results.push({ amt, merchant, date, bank, raw: block.slice(0, 100) });
   }
   return results;
 }

@@ -1,8 +1,8 @@
 // ══════════════════════════════════════
-// REPORTS — genReport, buildGantt, drawRptCharts, print, PDF
+// REPORTS — genReport, buildGantt, drawRptCharts, print, PDF, genMonthlyReport
 // ══════════════════════════════════════
 import { fmt } from '../utils.js';
-import { S, rptCharts, getTotalExp } from '../state.js';
+import { S, rptCharts, getTotalExp, calcPayoff, sipFV } from '../state.js';
 
 export function genReport() {
   const from = document.getElementById('rpt-from').value;
@@ -126,6 +126,192 @@ function drawRptCharts(dates, dailyByDate, catTotals) {
 }
 
 export function printReport() { window.print(); }
+
+// ══════════════════════════════════════
+// MONTHLY REPORT — one-click rich PDF
+// ══════════════════════════════════════
+export function genMonthlyReport(btn) {
+  const now    = new Date();
+  const year   = now.getFullYear();
+  const month  = now.getMonth(); // 0-indexed; we report previous month if before 5th, else current
+  const target = now.getDate() < 5 ? new Date(year, month - 1, 1) : new Date(year, month, 1);
+  const tYear  = target.getFullYear();
+  const tMonth = target.getMonth();
+  const from   = `${tYear}-${String(tMonth + 1).padStart(2, '0')}-01`;
+  const lastDay = new Date(tYear, tMonth + 1, 0).getDate();
+  const to     = `${tYear}-${String(tMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  const monthLabel = target.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+  const dExps      = S.dailyExps.filter(e => e.date >= from && e.date <= to);
+  const dailyTotal = dExps.reduce((s, e) => s + e.amt, 0);
+  const { total: fixedTotal, bd } = getTotalExp();
+  const grandTotal = dailyTotal + fixedTotal;
+
+  // Income
+  const inc  = parseFloat(document.getElementById('s-inc')?.value) || 0;
+  const xi   = parseFloat(document.getElementById('s-xi')?.value)  || 0;
+  const totInc = inc + xi;
+  const xp   = parseFloat(document.getElementById('s-xp')?.value)  || 0;
+  const surp  = totInc - grandTotal - xp;
+
+  // Debts
+  const totalDebt = S.debts.reduce((s, d) => s + d.balance, 0);
+  const emiTotal  = S.debts.reduce((s, d) => s + d.emi, 0);
+  const { months: payoffMonths } = calcPayoff(S.debts, xp);
+
+  // SIPs
+  const sipMonthly  = S.sips.reduce((s, x) => s + x.amt, 0);
+  const sipInvested = S.sips.reduce((s, x) => s + (x.invested || 0), 0);
+  const sipCurrent  = S.sips.reduce((s, x) => s + (x.curval || 0), 0);
+  const sipGain     = sipCurrent - sipInvested;
+  const sipGainPct  = sipInvested > 0 ? (sipGain / sipInvested * 100).toFixed(1) : '0.0';
+
+  // Category breakdown (daily)
+  const catTotals = {};
+  dExps.forEach(e => { catTotals[e.catId] = (catTotals[e.catId] || 0) + e.amt; });
+  const topCats = S.dailyCats.filter(c => catTotals[c.id] > 0)
+    .sort((a, b) => catTotals[b.id] - catTotals[a.id])
+    .slice(0, 8);
+
+  // Savings rate
+  const savRate = totInc > 0 ? Math.max(0, surp / totInc * 100).toFixed(1) : '0.0';
+  const savCol  = surp >= 0 ? 'var(--ok)' : 'var(--danger)';
+
+  // Fixed expense breakdown
+  const fixedRows = Object.entries(bd)
+    .filter(([, b]) => b.val > 0)
+    .map(([, b]) => `<tr><td>${b.icon} ${b.label}</td><td class="mono" style="text-align:right;color:var(--rose)">${fmt(b.val)}</td></tr>`)
+    .join('');
+
+  // Top daily expenses
+  const top5 = [...dExps].sort((a, b) => b.amt - a.amt).slice(0, 5);
+
+  const html = `
+    <div style="font-family:'Outfit',sans-serif;color:var(--t1);padding:.5rem">
+
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.2rem;padding-bottom:.8rem;border-bottom:2px solid var(--b1)">
+        <div>
+          <div style="font-family:'Cabinet Grotesk',sans-serif;font-size:1.4rem;font-weight:900;letter-spacing:-.03em">Monthly Summary</div>
+          <div style="font-size:.8rem;color:var(--t3);margin-top:.15rem">${monthLabel} · NidhiPath</div>
+        </div>
+        <div style="text-align:right;font-size:.6rem;color:var(--t3);font-family:'JetBrains Mono',monospace">
+          Generated ${new Date().toLocaleDateString('en-IN')}<br>
+          ${dExps.length} transactions
+        </div>
+      </div>
+
+      <!-- KPI row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:1.2rem">
+        ${[
+          { l:'Total Income',    v: fmt(totInc),    c:'var(--ok)'     },
+          { l:'Total Expenses',  v: fmt(grandTotal), c:'var(--danger)' },
+          { l:'Surplus',         v: fmt(surp),       c: savCol         },
+          { l:'Savings Rate',    v: savRate + '%',   c: savCol         },
+        ].map(k => `
+          <div style="background:var(--s1);border:1.5px solid var(--b1);border-radius:10px;padding:.7rem .8rem">
+            <div style="font-size:.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem">${k.l}</div>
+            <div style="font-family:'Cabinet Grotesk',sans-serif;font-size:1.1rem;font-weight:900;color:${k.c}">${k.v}</div>
+          </div>`).join('')}
+      </div>
+
+      <!-- Income + Expense split -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:1.2rem">
+        <div style="background:var(--s1);border:1.5px solid var(--b1);border-radius:10px;padding:.9rem">
+          <div style="font-family:'Cabinet Grotesk',sans-serif;font-size:.85rem;font-weight:800;margin-bottom:.6rem">💰 Income</div>
+          <table style="width:100%;font-size:.72rem;border-collapse:collapse">
+            <tr><td style="padding:.2rem 0;color:var(--t2)">Base Salary</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:var(--ok)">${fmt(inc)}</td></tr>
+            ${xi > 0 ? `<tr><td style="padding:.2rem 0;color:var(--t2)">Extra Income</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:var(--ok)">${fmt(xi)}</td></tr>` : ''}
+            <tr style="border-top:1px solid var(--b1)"><td style="padding:.3rem 0;font-weight:700">Total</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--ok)">${fmt(totInc)}</td></tr>
+          </table>
+        </div>
+        <div style="background:var(--s1);border:1.5px solid var(--b1);border-radius:10px;padding:.9rem">
+          <div style="font-family:'Cabinet Grotesk',sans-serif;font-size:.85rem;font-weight:800;margin-bottom:.6rem">💸 Expenses</div>
+          <table style="width:100%;font-size:.72rem;border-collapse:collapse">
+            <tr><td style="padding:.2rem 0;color:var(--t2)">Fixed Monthly</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:var(--rose)">${fmt(fixedTotal)}</td></tr>
+            <tr><td style="padding:.2rem 0;color:var(--t2)">Daily Expenses</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:var(--rose)">${fmt(dailyTotal)}</td></tr>
+            ${xp > 0 ? `<tr><td style="padding:.2rem 0;color:var(--t2)">Extra Payoff</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:var(--rose)">${fmt(xp)}</td></tr>` : ''}
+            <tr style="border-top:1px solid var(--b1)"><td style="padding:.3rem 0;font-weight:700">Total</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--danger)">${fmt(grandTotal + xp)}</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Fixed expense breakdown -->
+      ${fixedRows ? `
+      <div style="background:var(--s1);border:1.5px solid var(--b1);border-radius:10px;padding:.9rem;margin-bottom:1.2rem">
+        <div style="font-family:'Cabinet Grotesk',sans-serif;font-size:.85rem;font-weight:800;margin-bottom:.6rem">🏠 Fixed Expense Breakdown</div>
+        <table style="width:100%;font-size:.72rem;border-collapse:collapse">${fixedRows}</table>
+      </div>` : ''}
+
+      <!-- Daily category breakdown -->
+      ${topCats.length ? `
+      <div style="background:var(--s1);border:1.5px solid var(--b1);border-radius:10px;padding:.9rem;margin-bottom:1.2rem">
+        <div style="font-family:'Cabinet Grotesk',sans-serif;font-size:.85rem;font-weight:800;margin-bottom:.7rem">🗓 Daily Spend by Category</div>
+        ${topCats.map(c => {
+          const pct = dailyTotal > 0 ? (catTotals[c.id] / dailyTotal * 100).toFixed(1) : '0.0';
+          const w   = Math.min(100, parseFloat(pct));
+          return `<div style="margin-bottom:.5rem">
+            <div style="display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:.2rem">
+              <span>${c.icon} ${c.name}</span>
+              <span style="font-family:'JetBrains Mono',monospace;color:var(--danger)">${fmt(catTotals[c.id])} <span style="color:var(--t3);font-size:.62rem">${pct}%</span></span>
+            </div>
+            <div style="height:5px;background:var(--s3);border-radius:3px"><div style="height:5px;width:${w}%;background:${c.color};border-radius:3px"></div></div>
+          </div>`;
+        }).join('')}
+      </div>` : `<div style="background:var(--s1);border:1.5px solid var(--b1);border-radius:10px;padding:.9rem;margin-bottom:1.2rem;text-align:center;color:var(--t3);font-size:.75rem">No daily expenses logged for ${monthLabel}.</div>`}
+
+      <!-- Top 5 transactions -->
+      ${top5.length ? `
+      <div style="background:var(--s1);border:1.5px solid var(--b1);border-radius:10px;padding:.9rem;margin-bottom:1.2rem">
+        <div style="font-family:'Cabinet Grotesk',sans-serif;font-size:.85rem;font-weight:800;margin-bottom:.6rem">📌 Top Transactions</div>
+        <table style="width:100%;font-size:.72rem;border-collapse:collapse">
+          <tr style="color:var(--t3);font-size:.6rem"><th style="text-align:left;padding:.2rem 0">Date</th><th style="text-align:left;padding:.2rem 0">Category</th><th style="text-align:left;padding:.2rem 0">Note</th><th style="text-align:right;padding:.2rem 0">Amount</th></tr>
+          ${top5.map(e => {
+            const c = S.dailyCats.find(x => x.id === e.catId) || { icon: '💸', name: 'Other' };
+            return `<tr><td style="padding:.25rem 0;color:var(--t3);font-family:'JetBrains Mono',monospace;font-size:.65rem">${e.date}</td><td>${c.icon} ${c.name}</td><td style="color:var(--t3)">${e.note || '—'}</td><td style="text-align:right;font-family:'JetBrains Mono',monospace;color:var(--danger)">${fmt(e.amt)}</td></tr>`;
+          }).join('')}
+        </table>
+      </div>` : ''}
+
+      <!-- Debt snapshot -->
+      ${S.debts.length ? `
+      <div style="background:var(--s1);border:1.5px solid var(--b1);border-radius:10px;padding:.9rem;margin-bottom:1.2rem">
+        <div style="font-family:'Cabinet Grotesk',sans-serif;font-size:.85rem;font-weight:800;margin-bottom:.6rem">💳 Debt Snapshot</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.6rem">
+          <div style="text-align:center"><div style="font-size:.6rem;color:var(--t3);text-transform:uppercase">Total Outstanding</div><div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--danger)">${fmt(totalDebt)}</div></div>
+          <div style="text-align:center"><div style="font-size:.6rem;color:var(--t3);text-transform:uppercase">Monthly EMI</div><div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--rose)">${fmt(emiTotal)}</div></div>
+          <div style="text-align:center"><div style="font-size:.6rem;color:var(--t3);text-transform:uppercase">Debt-Free In</div><div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--amber)">${payoffMonths > 0 ? payoffMonths + ' mo' : 'N/A'}</div></div>
+        </div>
+        ${S.debts.map(d => `<div style="display:flex;justify-content:space-between;align-items:center;padding:.3rem 0;border-top:1px solid var(--b1);font-size:.72rem"><span style="color:var(--t2)">${d.name}</span><span style="font-family:'JetBrains Mono',monospace;color:var(--danger)">${fmt(d.balance)} <span style="color:var(--t3);font-size:.62rem">@ ${d.rate}%</span></span></div>`).join('')}
+      </div>` : ''}
+
+      <!-- SIP snapshot -->
+      ${S.sips.length ? `
+      <div style="background:var(--s1);border:1.5px solid var(--b1);border-radius:10px;padding:.9rem;margin-bottom:1.2rem">
+        <div style="font-family:'Cabinet Grotesk',sans-serif;font-size:.85rem;font-weight:800;margin-bottom:.6rem">📈 SIP Portfolio</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem">
+          <div style="text-align:center"><div style="font-size:.6rem;color:var(--t3);text-transform:uppercase">Monthly SIP</div><div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--sky)">${fmt(sipMonthly)}</div></div>
+          <div style="text-align:center"><div style="font-size:.6rem;color:var(--t3);text-transform:uppercase">Invested</div><div style="font-family:'JetBrains Mono',monospace;font-weight:700">${fmt(sipInvested)}</div></div>
+          <div style="text-align:center"><div style="font-size:.6rem;color:var(--t3);text-transform:uppercase">Current Value</div><div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--teal)">${fmt(sipCurrent)}</div></div>
+          <div style="text-align:center"><div style="font-size:.6rem;color:var(--t3);text-transform:uppercase">Gain</div><div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${sipGain >= 0 ? 'var(--ok)' : 'var(--danger)'}">${sipGain >= 0 ? '+' : ''}${fmt(sipGain)} (${sipGainPct}%)</div></div>
+        </div>
+      </div>` : ''}
+
+      <!-- Footer -->
+      <div style="text-align:center;font-size:.6rem;color:var(--t3);padding-top:.8rem;border-top:1px solid var(--b1)">
+        NidhiPath · finance.aashman.in · ${monthLabel} Report · Data is private and stored locally
+      </div>
+    </div>
+  `;
+
+  const wrap = document.getElementById('rpt-preview-wrap');
+  const content = document.getElementById('rpt-content');
+  if (wrap) wrap.style.display = 'block';
+  if (content) content.innerHTML = html;
+
+  // Scroll to preview
+  wrap?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 export async function downloadPDF(btn) {
   const el = document.getElementById('rpt-content');

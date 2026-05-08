@@ -372,3 +372,13 @@ input[type=number] { -moz-appearance:textfield }
   text-align: center;
   margin-bottom: 1.25rem;
 }
+
+/* SMS IMPORT */
+.sms-row{background:var(--s1);border:1.5px solid var(--b1);border-radius:var(--rm);padding:.75rem;margin-bottom:.55rem;transition:border-color var(--tr)}
+.sms-row:hover{border-color:var(--b2)}
+.sms-row-meta{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.45rem;font-size:.65rem}
+.sms-row-meta .mono{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t3)}
+.sms-row-fields{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
+.sms-msg{padding:.45rem .7rem;border-radius:var(--rs);font-size:.72rem;margin-top:.65rem}
+.sms-msg.ok{background:var(--ok-s);color:var(--ok);border:1px solid var(--ok)}
+.sms-msg.warn{background:var(--warn-s);color:var(--warn);border:1px solid var(--warn)}

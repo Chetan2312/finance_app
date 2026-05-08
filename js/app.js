@@ -18,7 +18,7 @@ import { renderDex, renderDexStats, renderCatMgr, renderDexSelects, buildMonthFi
 import { toggleTheme, applyTheme } from './modules/theme.js';
 import { rc, setOverviewFns } from './modules/overview.js';
 import { updateBudget } from './modules/budget.js';
-import { genReport, printReport, downloadPDF } from './modules/reports.js';
+import { genReport, printReport, downloadPDF, genMonthlyReport } from './modules/reports.js';
 import { dov, dol, dod, hStmt } from './modules/statements.js';
 import { genMilestones } from './modules/milestones.js';
 
@@ -27,6 +27,9 @@ import { loadInvest } from './modules/invest.js';
 
 // ── Phase 6 modules ──
 import { sq, sendMsg, toggleApiKeyPanel, applyApiKey, clearApiKeyUI } from './modules/ai.js';
+
+// ── SMS import ──
+import { parseSMS, renderSMS, smsPaste, smsFromClipboard, smsImportOne, smsImportAll, smsDismiss, setRcFn as setSmsRc } from './modules/sms.js';
 
 // ── v8 modules ──
 import { initAuth, setAuthCallbacks, setAuthRcFn, showAuthModal } from './modules/auth.js';
@@ -41,6 +44,7 @@ function sw(t, el) {
   el.classList.add('on');
   document.getElementById('pg-' + t).classList.add('on');
   if (t === 'invest')    loadInvest();
+  if (t === 'sms')       renderSMS();
   if (t === 'household') renderHousehold();
   if (t === 'milestones') genMilestones();
   if (t === 'sip') renderSIPs();
@@ -74,7 +78,7 @@ function renderAll() {
 // ══════════════════════════════════════
 async function init() {
   // Wire rc() into tab modules
-  setExpRc(rc); setDebtRc(rc); setSipRc(rc); setDailyRc(rc);
+  setExpRc(rc); setDebtRc(rc); setSipRc(rc); setDailyRc(rc); setSmsRc(rc);
 
   // Wire cross-module callbacks into overview
   setOverviewFns({ sipSummary, renderDebts, renderDexStats, updateBudget });
@@ -128,7 +132,7 @@ Object.assign(window, {
   // Daily
   openDCatModal, saveDCat, rmDCat, addDex, openDexEdit, saveDexEdit, rmDex, clearDexFilter, renderDex,
   // Reports
-  genReport, printReport, downloadPDF,
+  genReport, printReport, downloadPDF, genMonthlyReport,
   // Statements
   dov, dol, dod, hStmt,
   // AI
@@ -139,6 +143,8 @@ Object.assign(window, {
   openMo, cmo, pickEm,
   // Navigation
   sw,
+  // SMS import
+  smsPaste, smsFromClipboard, smsImportOne, smsImportAll, smsDismiss,
   // Auth + Household
   showAuthModal,
   renderHousehold,

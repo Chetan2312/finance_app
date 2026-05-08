@@ -202,6 +202,7 @@
   <button class="ntab"    onclick="sw('budget',this)">🧮 Budget</button>
   <button class="ntab"    onclick="sw('reports',this)">📋 Reports</button>
   <button class="ntab"    onclick="sw('statements',this)">🏦 Statements</button>
+  <button class="ntab"    onclick="sw('sms',this)">💬 SMS Import</button>
   <button class="ntab"    onclick="sw('household',this)">👥 Household</button>
   <button class="ntab"    onclick="sw('ai',this)">🤖 AI</button>
 </nav>
@@ -373,9 +374,20 @@
 
 <!-- ════ REPORTS ════ -->
 <div id="pg-reports" class="page">
+  <!-- Monthly quick report -->
+  <div class="card mb1 no-print" style="border-color:var(--p);background:var(--info-s)">
+    <div class="flex jb ac wrap gap4">
+      <div>
+        <div style="font-family:var(--fd);font-size:.9rem;font-weight:800;margin-bottom:.2rem">⚡ Monthly Summary PDF</div>
+        <div class="xxs c-muted">One-click report for the current month — income, expenses, debts, SIPs, top transactions.</div>
+      </div>
+      <button class="btn bp" onclick="genMonthlyReport(this)" style="white-space:nowrap">📄 Generate Monthly PDF</button>
+    </div>
+  </div>
+
   <!-- Controls -->
   <div class="report-controls no-print">
-    <div class="sh"><div class="shdot" style="background:var(--sky)"></div>Generate Report</div>
+    <div class="sh"><div class="shdot" style="background:var(--sky)"></div>Custom Date Range Report</div>
     <div class="flex gap6 ac wrap mb1">
       <div class="fi" style="flex:1;min-width:140px;margin-bottom:0"><label>From Date</label><input type="date" id="rpt-from"></div>
       <div class="fi" style="flex:1;min-width:140px;margin-bottom:0"><label>To Date</label><input type="date" id="rpt-to"></div>
@@ -455,6 +467,31 @@
 </div>
 
 <!-- ════ HOUSEHOLD ════ -->
+<!-- ════ SMS IMPORT ════ -->
+<div id="pg-sms" class="page">
+  <div class="card mb1">
+    <div class="sh"><div class="shdot" style="background:var(--teal)"></div>Bank SMS Auto-Import</div>
+    <div class="ib xxs mb1">📲 Copy SMS from your Messages app → paste below. Supports HDFC · SBI · ICICI · Axis · Kotak · UPI transactions.</div>
+    <textarea id="sms-input" class="ci" rows="5" style="width:100%;resize:vertical;font-family:var(--fm);font-size:.75rem" placeholder="Paste one or more bank SMS messages here…&#10;&#10;Example:&#10;Rs.500.00 debited from a/c XX1234 on 01-Jan-25 trf to SWIGGY. Avl Bal: Rs.12,450.00"></textarea>
+    <div class="flex gap4 mt1 wrap">
+      <button class="btn bp" onclick="smsPaste()">🔍 Parse SMS</button>
+      <button class="btn bg" onclick="smsFromClipboard()">📋 Read Clipboard</button>
+      <button class="btn bg bsm" onclick="document.getElementById('sms-input').value='';document.getElementById('sms-result').style.display='none';document.getElementById('sms-msg').style.display='none'">✕ Clear</button>
+    </div>
+    <div id="sms-msg" class="sms-msg" style="display:none"></div>
+  </div>
+  <div id="sms-result" style="display:none" class="card"></div>
+  <div class="card">
+    <div class="sh"><div class="shdot" style="background:var(--amber)"></div>How it works</div>
+    <div class="sub-list">
+      <div class="sub-row"><span>1️⃣</span><div><div class="sub-n">Copy SMS from bank</div><div class="sub-m">Open Messages app → find debit SMS → copy text</div></div></div>
+      <div class="sub-row"><span>2️⃣</span><div><div class="sub-n">Paste &amp; parse</div><div class="sub-m">Paste above and tap Parse SMS. Multiple SMS can be pasted at once.</div></div></div>
+      <div class="sub-row"><span>3️⃣</span><div><div class="sub-n">Review &amp; edit</div><div class="sub-m">Auto-detect amount, date, merchant. Adjust category before importing.</div></div></div>
+      <div class="sub-row"><span>4️⃣</span><div><div class="sub-n">Import to Daily</div><div class="sub-m">Tap Import All or add individually. Entries appear in Daily Expenses tab.</div></div></div>
+    </div>
+  </div>
+</div>
+
 <div id="pg-household" class="page">
   <!-- Rendered by js/modules/household.js -->
 </div>

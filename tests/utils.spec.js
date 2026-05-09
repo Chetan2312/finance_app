@@ -1,5 +1,19 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import { xirr, sipXIRR, postTaxFV } from '../js/utils.js';
+
+// ── calendarDaysInPeriod (pure fn, tested inline to avoid DOM deps of reports.js) ──
+function calendarDaysInPeriod(from, to) {
+  const f = new Date(from + 'T00:00:00'), t = new Date(to + 'T00:00:00');
+  let total = 0, cur = new Date(f.getFullYear(), f.getMonth(), 1);
+  while (cur <= t) {
+    const daysInMonth = new Date(cur.getFullYear(), cur.getMonth() + 1, 0).getDate();
+    const start = cur.getFullYear() === f.getFullYear() && cur.getMonth() === f.getMonth() ? f.getDate() : 1;
+    const end   = cur.getFullYear() === t.getFullYear() && cur.getMonth() === t.getMonth() ? t.getDate() : daysInMonth;
+    total += (end - start + 1);
+    cur.setMonth(cur.getMonth() + 1);
+  }
+  return total;
+}
 
 describe('xirr', () => {
   test('returns null for fewer than 2 cashflows', () => {
@@ -61,5 +75,28 @@ describe('postTaxFV', () => {
   test('no tax when no gain', () => {
     expect(postTaxFV(100000, 100000, 'equity', 2, 30)).toBe(100000);
     expect(postTaxFV(80000, 100000, 'equity', 2, 30)).toBe(80000);
+  });
+});
+
+describe('calendarDaysInPeriod', () => {
+  test('single full month (Jan 31d)', () => {
+    expect(calendarDaysInPeriod('2025-01-01', '2025-01-31')).toBe(31);
+  });
+
+  test('single full month (Feb 28d non-leap)', () => {
+    expect(calendarDaysInPeriod('2025-02-01', '2025-02-28')).toBe(28);
+  });
+
+  test('partial month (Jan 1–15 = 15 days)', () => {
+    expect(calendarDaysInPeriod('2025-01-01', '2025-01-15')).toBe(15);
+  });
+
+  test('cross-month range (Jan 15 – Feb 14 = 17+14 = 31 days)', () => {
+    // Jan: 15th to 31st = 17 days; Feb: 1st to 14th = 14 days
+    expect(calendarDaysInPeriod('2025-01-15', '2025-02-14')).toBe(31);
+  });
+
+  test('same day = 1', () => {
+    expect(calendarDaysInPeriod('2025-03-10', '2025-03-10')).toBe(1);
   });
 });

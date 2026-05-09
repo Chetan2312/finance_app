@@ -14,6 +14,7 @@ export let S = {
   inflation: 5, showRealFV: false,
   taxRegime: 'new', taxSlab: 30,
   householdId: null, userId: null, members: [],
+  _lastLocalSave: 0,
 };
 
 // Mutable refs used by various modules
@@ -37,10 +38,12 @@ export async function startSync(householdId, userId, onUpdate) {
     _PATHS      = fb.PATHS;
   } catch(e) { console.warn('[state] Firebase not ready', e); return; }
 
-  // Listen to own profile
+  // Listen to own profile — LWW: skip if remote snapshot is older than our last local save
   _unsubProfile = _onSnapshot(_PATHS.profile(householdId, userId), snap => {
     if (!snap.exists()) return;
     const d = snap.data();
+    const remoteTs = d.updatedAt?.toMillis?.() ?? 0;
+    if (remoteTs < S._lastLocalSave) return; // stale snapshot — our local write wins
     if (d.debts)     S.debts     = d.debts;
     if (d.sips)      S.sips      = d.sips;
     if (d.expSecs)   S.expSecs   = d.expSecs;
@@ -87,6 +90,9 @@ export function sv() {
       taxRegime: S.taxRegime, taxSlab: S.taxSlab,
       householdId: S.householdId,
     };
+    // Stamp local save time so LWW in startSync() can compare
+    S._lastLocalSave = Date.now();
+
     // Also push to Firestore if signed in + in a household
     if (S.householdId && S.userId) {
       import('./firebase.js').then(({ db, PATHS, setDoc, serverTimestamp }) => {

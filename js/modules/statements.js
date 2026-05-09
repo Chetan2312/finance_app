@@ -9,10 +9,24 @@ export function dol() { document.getElementById('upz').classList.remove('dg'); }
 export function dod(e) { e.preventDefault(); dol(); const f = e.dataTransfer.files[0]; if (f) pStmt(f); }
 export function hStmt(e) { if (e.target.files[0]) pStmt(e.target.files[0]); }
 
+// Bank-specific column presets { date, narration, debit, credit }
+const BANK_PRESETS = {
+  auto:  { date: ['date','dt','txn date','value date'],       narration: ['description','narration','particulars','remarks'], debit: ['debit','dr','withdrawal','withdrawal amt.','debit amount'], credit: ['credit','cr','deposit','deposit amt.','credit amount'] },
+  hdfc:  { date: ['date'],                                    narration: ['narration'],                                       debit: ['withdrawal amt.'],                                          credit: ['deposit amt.'] },
+  icici: { date: ['date'],                                    narration: ['description'],                                     debit: ['withdrawals'],                                              credit: ['deposits'] },
+  sbi:   { date: ['txn date','date'],                         narration: ['description'],                                     debit: ['debit'],                                                    credit: ['credit'] },
+  axis:  { date: ['tran date','date'],                        narration: ['particulars'],                                     debit: ['debit'],                                                    credit: ['credit'] },
+  kotak: { date: ['date'],                                    narration: ['description'],                                     debit: ['debit amount'],                                             credit: ['credit amount'] },
+};
+
 function pStmt(f) {
   const r = new FileReader();
   r.onload = e => parseStmt(e.target.result);
   r.readAsText(f);
+}
+
+function resolveCol(header, keywords) {
+  return header.findIndex(h => keywords.some(k => h.includes(k)));
 }
 
 function parseStmt(txt) {
@@ -20,24 +34,27 @@ function parseStmt(txt) {
   if (!lines.length) { alert('Empty file'); return; }
   const dl = lines[0].includes('\t') ? '\t' : ',';
   const rows = lines.map(l => l.split(dl).map(c => c.replace(/^["']|["']$/g, '').trim()));
+
+  const bankSel = document.getElementById('stmt-bank')?.value || 'auto';
+  const preset  = BANK_PRESETS[bankSel] || BANK_PRESETS.auto;
+
   let hi = 0, dc = -1, nc = -1, dbc = -1, cc = -1, ac = -1;
-  const dw = ['date', 'dt', 'txn date', 'value date'];
-  const nw = ['description', 'narration', 'particulars', 'remarks'];
-  const dbw = ['debit', 'dr', 'withdrawal'];
-  const cw = ['credit', 'cr', 'deposit'];
   for (let i = 0; i < Math.min(10, rows.length); i++) {
     const h = rows[i].map(c => c.toLowerCase());
-    if (h.some(c => dw.some(d => c.includes(d)))) {
+    if (h.some(c => preset.date.some(d => c.includes(d)))) {
       hi = i;
-      dc = h.findIndex(c => dw.some(d => c.includes(d)));
-      nc = h.findIndex(c => nw.some(d => c.includes(d)));
-      dbc = h.findIndex(c => dbw.some(d => c.includes(d)));
-      cc = h.findIndex(c => cw.some(d => c.includes(d)));
-      ac = dbc === -1 && cc === -1 ? h.findIndex(c => c.includes('amount')) : -1;
+      dc  = resolveCol(h, preset.date);
+      nc  = resolveCol(h, preset.narration);
+      dbc = resolveCol(h, preset.debit);
+      cc  = resolveCol(h, preset.credit);
+      ac  = dbc === -1 && cc === -1 ? h.findIndex(c => c.includes('amount')) : -1;
       break;
     }
   }
-  if (dc === -1) { alert('Cannot detect date column.'); return; }
+  if (dc === -1) { alert('Cannot detect date column. Try selecting your bank format.'); return; }
+
+  // Flag rows where both debit and credit are non-zero (sign ambiguity)
+  let flagCount = 0;
   const txns = [];
   for (let i = hi + 1; i < rows.length; i++) {
     const row = rows[i];
@@ -48,10 +65,12 @@ function parseStmt(txt) {
     if (dbc >= 0) deb = pam(row[dbc]);
     if (cc >= 0) cr = pam(row[cc]);
     if (ac >= 0) { const a = pam(row[ac]); if (a < 0) deb = Math.abs(a); else cr = a; }
+    if (deb > 0 && cr > 0) flagCount++; // ambiguous row — both columns non-zero
     const desc = nc >= 0 ? row[nc] : '';
     if (deb > 0 || cr > 0) txns.push({ date, desc, deb, cr });
   }
   if (!txns.length) { alert('No transactions found.'); return; }
+  if (flagCount > 0) console.warn(`[stmt] ${flagCount} rows had both debit and credit non-zero — check bank format.`);
 
   const months = {};
   txns.forEach(t => {

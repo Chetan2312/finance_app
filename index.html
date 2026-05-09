@@ -447,6 +447,17 @@
 <!-- ════ STATEMENTS ════ -->
 <div id="pg-statements" class="page">
   <div class="card mb1"><div class="sh"><div class="shdot" style="background:var(--sky)"></div>Bank Statement Analyser</div>
+    <div class="fi mb1" style="max-width:260px">
+      <label>Bank Format</label>
+      <select id="stmt-bank">
+        <option value="auto">Auto-detect</option>
+        <option value="hdfc">HDFC Bank</option>
+        <option value="icici">ICICI Bank</option>
+        <option value="sbi">State Bank of India (SBI)</option>
+        <option value="axis">Axis Bank</option>
+        <option value="kotak">Kotak Mahindra Bank</option>
+      </select>
+    </div>
     <div class="upz" id="upz" onclick="document.getElementById('stmt-f').click()" ondragover="dov(event)" ondragleave="dol()" ondrop="dod(event)">
       <input type="file" id="stmt-f" accept=".csv,.txt" onchange="hStmt(event)">
       <div style="font-size:2rem;margin-bottom:.4rem">🏦</div>

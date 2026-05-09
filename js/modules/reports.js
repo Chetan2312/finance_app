@@ -4,6 +4,20 @@
 import { fmt } from '../utils.js';
 import { S, rptCharts, getTotalExp, calcPayoff, sipFV } from '../state.js';
 
+export function calendarDaysInPeriod(from, to) {
+  // Sum actual days-in-month for each calendar month spanned by [from, to]
+  const f = new Date(from + 'T00:00:00'), t = new Date(to + 'T00:00:00');
+  let total = 0, cur = new Date(f.getFullYear(), f.getMonth(), 1);
+  while (cur <= t) {
+    const daysInMonth = new Date(cur.getFullYear(), cur.getMonth() + 1, 0).getDate();
+    const start = cur.getFullYear() === f.getFullYear() && cur.getMonth() === f.getMonth() ? f.getDate() : 1;
+    const end   = cur.getFullYear() === t.getFullYear() && cur.getMonth() === t.getMonth() ? t.getDate() : daysInMonth;
+    total += (end - start + 1);
+    cur.setMonth(cur.getMonth() + 1);
+  }
+  return total;
+}
+
 export function genReport() {
   const from = document.getElementById('rpt-from').value;
   const to = document.getElementById('rpt-to').value;
@@ -14,7 +28,10 @@ export function genReport() {
   const totalDaily = dExps.reduce((s, e) => s + e.amt, 0);
   const daysDiff = Math.max(1, Math.ceil((new Date(to) - new Date(from)) / (1000 * 60 * 60 * 24)));
   const { total: fixedMonthly, bd } = getTotalExp();
-  const fixedProrated = type === 'daily' ? 0 : (fixedMonthly / 30 * daysDiff);
+  const periodDays = calendarDaysInPeriod(from, to);
+  const fromDate = new Date(from + 'T00:00:00');
+  const daysInFromMonth = new Date(fromDate.getFullYear(), fromDate.getMonth() + 1, 0).getDate();
+  const fixedProrated = type === 'daily' ? 0 : (fixedMonthly * periodDays / daysInFromMonth);
   const grandTotal = type === 'fixed' ? fixedProrated : type === 'daily' ? totalDaily : totalDaily + fixedProrated;
   const catTotals = {};
   dExps.forEach(e => { catTotals[e.catId] = (catTotals[e.catId] || 0) + e.amt; });
@@ -63,7 +80,7 @@ export function genReport() {
       <div style="font-family:var(--fd);font-size:.82rem;font-weight:800;margin-bottom:.6rem">Fixed Expenses (Monthly)</div>
       <table class="rpt-table">
         <thead><tr><th>Category</th><th>Monthly</th><th>Prorated (${daysDiff}d)</th></tr></thead>
-        <tbody>${Object.entries(bd).filter(([, b]) => b.val > 0).map(([, b]) => `<tr><td>${b.icon} ${b.label}</td><td class="mono">${fmt(b.val)}</td><td class="mono" style="color:var(--amber)">${fmt(b.val / 30 * daysDiff)}</td></tr>`).join('')}</tbody>
+        <tbody>${Object.entries(bd).filter(([, b]) => b.val > 0).map(([, b]) => `<tr><td>${b.icon} ${b.label}</td><td class="mono">${fmt(b.val)}</td><td class="mono" style="color:var(--amber)">${fmt(b.val * periodDays / daysInFromMonth)}</td></tr>`).join('')}</tbody>
       </table>
     </div>` : ''}
     <div>

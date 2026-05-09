@@ -1,0 +1,227 @@
+{
+  "version": 1,
+  "skills": {
+    "3-statement-model": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/financial-analysis/skills/3-statement-model/SKILL.md",
+      "computedHash": "1bf9f28bb52c29f8bb976d5bcba88910307983866424d43ff209b9c305eea9c8"
+    },
+    "accrual-schedule": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/fund-admin/skills/accrual-schedule/SKILL.md",
+      "computedHash": "07725e005e6ce8a92012e4f9ddb0fed52a9998087e6c7e157d1b28fa272b22b1"
+    },
+    "audit-xls": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/financial-analysis/skills/audit-xls/SKILL.md",
+      "computedHash": "890ac2385d133a0fe7f11bf7dc0b6ebe4a844fdbe2eccdecb1d863b298517584"
+    },
+    "bond-futures-basis": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/partner-built/lseg/skills/bond-futures-basis/SKILL.md",
+      "computedHash": "0f9229e21e8f300bbb6f025858c60c580e7d8c58ccdcbf2e2a8f3626887a7621"
+    },
+    "bond-relative-value": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/partner-built/lseg/skills/bond-relative-value/SKILL.md",
+      "computedHash": "80b5a3ae15969caca369911037d21eb0fb4b5fd9b46d5db57b2af3e79c11ac8f"
+    },
+    "break-trace": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/fund-admin/skills/break-trace/SKILL.md",
+      "computedHash": "5d7d3fe7ecf69c8ddf4f9e279fb8ff84273e7066863cd0eea55ce527a2a09287"
+    },
+    "clean-data-xls": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/financial-analysis/skills/clean-data-xls/SKILL.md",
+      "computedHash": "a8cd312f1c7d91022f61f1a3be8c0e82d04d63c584e681bd934f36a679c139b6"
+    },
+    "competitive-analysis": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/financial-analysis/skills/competitive-analysis/SKILL.md",
+      "computedHash": "14cf7f97a5f70a7c18c4f984de9301d446c23eb1f25f9e66add2025b4a65a30f"
+    },
+    "comps-analysis": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/financial-analysis/skills/comps-analysis/SKILL.md",
+      "computedHash": "0e0c5e94e64e20d734874daf2afab71dfcb7e48f2064d34146e09128f1de6fdd"
+    },
+    "datapack-builder": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/investment-banking/skills/datapack-builder/SKILL.md",
+      "computedHash": "cce2626741bf1a34e300afedd538bcbcdc3e8ba2f9b3df333a62ef91538ad6db"
+    },
+    "dcf-model": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/financial-analysis/skills/dcf-model/SKILL.md",
+      "computedHash": "5ec4336850cc7cf2c93932d7163bdb273d2f3ffadcaa216cb90361fe8d2f217f"
+    },
+    "deck-refresh": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/financial-analysis/skills/deck-refresh/SKILL.md",
+      "computedHash": "77c6ea935b75eeb50db6663a9b9e2217cc5f2b2342be38e3f59fb82ce79b7e8c"
+    },
+    "earnings-analysis": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/equity-research/skills/earnings-analysis/SKILL.md",
+      "computedHash": "57da904968b9c28d0538f0876078601e662aa12932aeffda45391cd832eb5dcd"
+    },
+    "earnings-preview-single": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/partner-built/spglobal/skills/earnings-preview-beta/SKILL.md",
+      "computedHash": "4d4c690bfbd1916baf8e50efe56ac9606d905ed73003430f8244b77ea1b9938f"
+    },
+    "equity-research": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/partner-built/lseg/skills/equity-research/SKILL.md",
+      "computedHash": "dc02cfb86e237e6c82db8bce7ed34bbd7cea6e6736d49b2c72b6615ac9518e6f"
+    },
+    "fixed-income-portfolio": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/partner-built/lseg/skills/fixed-income-portfolio/SKILL.md",
+      "computedHash": "7f85f818e6e6baca5b03e7accc48ce64763d62f9199a3a9e562db9d76c44ea3c"
+    },
+    "fsi-strip-profile": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/investment-banking/skills/strip-profile/SKILL.md",
+      "computedHash": "1a0b1b4492de09c99cd2dae6ea3fd86074430781b066ae8f40e57cf1e361fc4b"
+    },
+    "funding-digest": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/partner-built/spglobal/skills/funding-digest/SKILL.md",
+      "computedHash": "ef27010710e62755beec0b0432aae4d4477e09b2dfaba2ebf07c9ef9d9a05fc8"
+    },
+    "fx-carry-trade": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/partner-built/lseg/skills/fx-carry-trade/SKILL.md",
+      "computedHash": "745838f97feafcfed1e0bd241cb669935a2a19542ecd151627777461a361f26d"
+    },
+    "gl-recon": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/fund-admin/skills/gl-recon/SKILL.md",
+      "computedHash": "b637c23603f6cd17ae5f8c924446d80169a74531d8014935ffea6ec1bdd88c6c"
+    },
+    "ib-check-deck": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/financial-analysis/skills/ib-check-deck/SKILL.md",
+      "computedHash": "a6eac58eb22f971aa8ef5af8cd618f911cbb2872f5da1964d50a5a5ee77fe35b"
+    },
+    "initiating-coverage": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/equity-research/skills/initiating-coverage/SKILL.md",
+      "computedHash": "a7b412545b16145a5b2ebdb14bc16086c8a33143fa58abdfba2955c995135074"
+    },
+    "kyc-doc-parse": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/operations/skills/kyc-doc-parse/SKILL.md",
+      "computedHash": "3d8499b484cf48bc06058f773a5e1c734cb6170c74c4475379a9c3579d4960de"
+    },
+    "kyc-rules": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/operations/skills/kyc-rules/SKILL.md",
+      "computedHash": "23530e7d284fef693d2e1b9edc90b4f081731c6783000c09a00dedbdd7ae201c"
+    },
+    "lbo-model": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/financial-analysis/skills/lbo-model/SKILL.md",
+      "computedHash": "7c98e2a35b2ff33a9b7d715ddffcabce9be695ed406dd436bf2eb3d3971c7c8d"
+    },
+    "macro-rates-monitor": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/partner-built/lseg/skills/macro-rates-monitor/SKILL.md",
+      "computedHash": "143cb50a4d243291d850f29dcf1425bd078b2207c06da7ba13ffd73b8731f7cb"
+    },
+    "nav-tieout": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/fund-admin/skills/nav-tieout/SKILL.md",
+      "computedHash": "256f5c912769cc9fcd6db7717eff0e9c1c91cc44510705d7db2c4a64281c9a6c"
+    },
+    "option-vol-analysis": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/partner-built/lseg/skills/option-vol-analysis/SKILL.md",
+      "computedHash": "2189582b63f63a38b62876b993cc2beaf73bbf9701d60720084fef3001dcbd1c"
+    },
+    "pitch-deck": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/investment-banking/skills/pitch-deck/SKILL.md",
+      "computedHash": "52cb8677872896c311b474ad78c0339224af063bfe5e05e466c83b3e83a8fcb9"
+    },
+    "ppt-template-creator": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/financial-analysis/skills/ppt-template-creator/SKILL.md",
+      "computedHash": "4bf6e49b5a539c04f26d99ca82e1d0d9203927dc3f499b5d3b09a3a616eb655a"
+    },
+    "pptx-author": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/financial-analysis/skills/pptx-author/SKILL.md",
+      "computedHash": "4d0afa02319170344aec499dd69c852e198998ec914ce82120a3e1a1178759cd"
+    },
+    "roll-forward": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/fund-admin/skills/roll-forward/SKILL.md",
+      "computedHash": "d42c9400038edbd0d694fbbeb83912e425d9271f666bff095660f196b3fcb38c"
+    },
+    "skill-creator": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/financial-analysis/skills/skill-creator/SKILL.md",
+      "computedHash": "272d984e884ac4eddca9c78730d2bdd60c0c14864ca35e166fed89553d7f9c97"
+    },
+    "swap-curve-strategy": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/partner-built/lseg/skills/swap-curve-strategy/SKILL.md",
+      "computedHash": "6e2587781d4351f49bf6165f080e80902ed6a142038f5e3d9b50a66c85b54578"
+    },
+    "tear-sheet": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/partner-built/spglobal/skills/tear-sheet/SKILL.md",
+      "computedHash": "0f3477bb160025c2e3c81b5d4c15ff418c9d93e2f9b9f0d69288325b7d3715a7"
+    },
+    "variance-commentary": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/fund-admin/skills/variance-commentary/SKILL.md",
+      "computedHash": "2b08d7e682ce05bb087796995fbe9ee255098f27d139fa4103bbcc5c633244ce"
+    },
+    "xlsx-author": {
+      "source": "anthropics/financial-services",
+      "sourceType": "github",
+      "skillPath": "plugins/vertical-plugins/financial-analysis/skills/xlsx-author/SKILL.md",
+      "computedHash": "98b55e4a1b56dde97c99b1a3fa90b53bf51c4dc091efedd0f8289f73e66571b3"
+    }
+  }
+}

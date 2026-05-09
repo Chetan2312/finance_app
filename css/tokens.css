@@ -52,7 +52,17 @@
   --rs:6px;
   --sh:0 8px 40px rgba(0,0,0,.6);
   --sh2:0 2px 12px rgba(0,0,0,.35);
-  --tr:.16s cubic-bezier(.4,0,.2,1);
+  --tr:.16s cubic-bezier(.4,0,.2,1); /* deprecated: use --tr-sm */
+
+  /* Spacing scale (8pt) */
+  --sp-1:.25rem; --sp-2:.5rem; --sp-3:.75rem;
+  --sp-4:1rem;   --sp-5:1.5rem; --sp-6:2rem; --sp-7:3rem;
+
+  /* Motion tiers */
+  --tr-micro:.1s cubic-bezier(.4,0,.2,1);
+  --tr-sm:.18s cubic-bezier(.4,0,.2,1);
+  --tr-md:.28s cubic-bezier(.4,0,.2,1);
+  --tr-lg:.45s cubic-bezier(.4,0,.2,1);
 }
 [data-theme=light]{
   --bg:#f0f1ff;

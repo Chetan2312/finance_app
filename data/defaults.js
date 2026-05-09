@@ -12,6 +12,9 @@ export const RISK_LVL = { large: 2, index: 2, hybrid: 2, flexi: 3, elss: 3, mid:
 
 export const CAT_ICO = { large: '🏢', index: '📉', hybrid: '⚖️', flexi: '🔄', elss: '💰', mid: '📊', small: '🚀', debt: '🛡️' };
 
+// Tax treatment by SIP category for post-tax FV calculation
+export const TAX_KIND = { large: 'equity', index: 'equity', flexi: 'equity', elss: 'equity', mid: 'equity', small: 'equity', hybrid: 'hybrid', debt: 'debt' };
+
 export const MS_COLS = { debt: 'var(--p)', save: 'var(--amber)', invest: 'var(--amber)', emergency: 'var(--sky)', closure: 'var(--danger)', freedom: 'var(--ok)' };
 
 export const DEF_DCATS = [

@@ -46,18 +46,25 @@ export function rc() {
   document.getElementById('ov-io').textContent = fmt(ioD);
 
   // Debt-free countdown
-  const { results, months, totalInt } = calcPayoff(S.debts, xp);
+  const { results, months, totalInt, converged } = calcPayoff(S.debts, xp);
   const { months: m0, totalInt: ti0 } = calcPayoff(S.debts, 0);
   const saved = ti0 - totalInt, mSaved = m0 - months;
   if (S.debts.filter(d => d.repay === 'emi' || !d.repay).length) {
-    const fd = new Date();
-    fd.setMonth(fd.getMonth() + months);
-    const ds = fd.toLocaleString('en-IN', { month: 'short', year: 'numeric' });
-    const y = Math.floor(months / 12), mo = months % 12;
-    document.getElementById('ov-fd').textContent = ds;
-    document.getElementById('r-date').textContent = ds;
-    document.getElementById('ov-fm').textContent = (y > 0 ? y + 'y ' : '') + mo + 'mo to go';
-    document.getElementById('r-mo').textContent = (y > 0 ? y + 'y ' : '') + mo + 'mo';
+    if (!converged) {
+      document.getElementById('ov-fd').textContent = '>40 yrs';
+      document.getElementById('r-date').textContent = '>40 yrs';
+      document.getElementById('ov-fm').textContent = '≥40 years (not converged)';
+      document.getElementById('r-mo').textContent = '≥40 years (not converged)';
+    } else {
+      const fd = new Date();
+      fd.setMonth(fd.getMonth() + months);
+      const ds = fd.toLocaleString('en-IN', { month: 'short', year: 'numeric' });
+      const y = Math.floor(months / 12), mo = months % 12;
+      document.getElementById('ov-fd').textContent = ds;
+      document.getElementById('r-date').textContent = ds;
+      document.getElementById('ov-fm').textContent = (y > 0 ? y + 'y ' : '') + mo + 'mo to go';
+      document.getElementById('r-mo').textContent = (y > 0 ? y + 'y ' : '') + mo + 'mo';
+    }
   } else {
     document.getElementById('ov-fd').textContent = '—';
     document.getElementById('r-date').textContent = '—';

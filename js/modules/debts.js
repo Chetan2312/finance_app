@@ -3,7 +3,7 @@
 // ══════════════════════════════════════
 import { fmt } from '../utils.js';
 import { DICONS, COLS } from '../../data/defaults.js';
-import { S, sv } from '../state.js';
+import { S, sv, calcPayoff } from '../state.js';
 import { openMo, cmo } from './modals.js';
 import { renderExp } from './expenses.js';
 
@@ -48,13 +48,30 @@ export function setSt(s) {
   sv(); renderDebts(); rcFn();
 }
 
+function debtPayoffDate(monthsFromNow) {
+  const d = new Date();
+  d.setMonth(d.getMonth() + monthsFromNow);
+  return d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+}
+
 export function renderDebts() {
   const el = document.getElementById('dbt-list');
   if (!S.debts.length) { el.innerHTML = '<div class="empty"><span class="empty-ic">💳</span>No debts yet.</div>'; return; }
   const sorted = S.strat === 'avalanche' ? [...S.debts].sort((a, b) => b.rate - a.rate) : [...S.debts].sort((a, b) => a.balance - b.balance);
+  // Compute per-debt payoff months
+  const xp = parseFloat(document.getElementById('s-xp')?.value) || 0;
+  const { results, converged } = calcPayoff(S.debts, xp);
+  const payoffMap = {};
+  results.forEach(r => { payoffMap[r.id] = r.month; });
+
   el.innerHTML = sorted.map((d, i) => {
     const prog = d.original > 0 ? Math.min(100, (1 - d.balance / d.original) * 100) : 0;
-    return `<div class="dcard"><div class="dcard-stripe" style="background:${d.color}"></div><div class="dcard-hd"><div class="dcard-ico" style="background:${d.color}18;color:${d.color}">${DICONS[d.type] || '🏦'}</div><div class="dcard-ti"><div class="dcard-nm">${d.name}${i === 0 ? '<span class="bdg bdg-p">TARGET</span>' : ''}${d.repay === 'interest' ? '<span class="bdg bdg-dan">INT-ONLY</span>' : d.repay === 'bullet' ? '<span class="bdg bdg-warn">BULLET</span>' : '<span class="bdg bdg-sky">🔗</span>'}</div><div class="dcard-mt">${d.rate}% p.a. · ${d.repay === 'interest' ? 'Interest-Only' : 'Reducing EMI'}${d.tenor ? ' · ' + d.tenor + 'mo left' : ''}</div><div class="pb mt05"><div class="pbf" style="width:${prog}%;background:${d.color}"></div></div></div><div class="dcard-rt"><div class="dcard-amt" style="color:${d.color}">${fmt(d.balance)}</div><div class="xxs c-muted">${fmt(d.emi)}/mo</div></div></div><div class="dcard-acts"><button class="btn bg bsm" onclick="openDebtModal('${d.id}')">✏️ Edit</button><button class="btn bd bsm" onclick="rmDebt('${d.id}')">✕ Remove</button></div></div>`;
+    let clearBy = '';
+    if (d.repay === 'emi' || !d.repay) {
+      if (payoffMap[d.id]) clearBy = `<span class="xxs c-muted" style="margin-top:.2rem;display:block">Cleared by ${debtPayoffDate(payoffMap[d.id])}</span>`;
+      else if (!converged) clearBy = `<span class="xxs" style="color:var(--danger);margin-top:.2rem;display:block">≥40 yrs — EMI too low</span>`;
+    }
+    return `<div class="dcard"><div class="dcard-stripe" style="background:${d.color}"></div><div class="dcard-hd"><div class="dcard-ico" style="background:${d.color}18;color:${d.color}">${DICONS[d.type] || '🏦'}</div><div class="dcard-ti"><div class="dcard-nm">${d.name}${i === 0 ? '<span class="bdg bdg-p">TARGET</span>' : ''}${d.repay === 'interest' ? '<span class="bdg bdg-dan">INT-ONLY</span>' : d.repay === 'bullet' ? '<span class="bdg bdg-warn">BULLET</span>' : '<span class="bdg bdg-sky">🔗</span>'}</div><div class="dcard-mt">${d.rate}% p.a. · ${d.repay === 'interest' ? 'Interest-Only' : 'Reducing EMI'}${d.tenor ? ' · ' + d.tenor + 'mo left' : ''}</div>${clearBy}<div class="pb mt05"><div class="pbf" style="width:${prog}%;background:${d.color}"></div></div></div><div class="dcard-rt"><div class="dcard-amt" style="color:${d.color}">${fmt(d.balance)}</div><div class="xxs c-muted">${fmt(d.emi)}/mo</div></div></div><div class="dcard-acts"><button class="btn bg bsm" onclick="openDebtModal('${d.id}')">✏️ Edit</button><button class="btn bd bsm" onclick="rmDebt('${d.id}')">✕ Remove</button></div></div>`;
   }).join('');
   const mp = S.debts.reduce((s, d) => s + d.emi, 0);
   document.getElementById('dbt-stats').innerHTML = `Total: <span style="color:var(--rose)">${fmt(S.debts.reduce((s, d) => s + d.balance, 0))}</span> · EMIs: ${fmt(mp)}/mo`;

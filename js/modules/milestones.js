@@ -76,15 +76,15 @@ function buildMsLocal(surp, sav, io, emi, _sipV) {
   if (emi.length) {
     const td = emi.reduce((a, b) => b.rate > a.rate ? b : a);
     const py = calcPayoff(S.debts, N('s-xp'));
-    ms.push({ num: ms.length + 1, title: 'Pay Off: ' + td.name, desc: `${td.rate}% p.a. Clears ${fmt(td.emi)}/mo EMI upon payoff.`, when: py.months + ' months', amount: fmt(td.balance), type: 'debt', urgency: 'medium', action: `Add ${fmt(N('s-xp'))}/mo extra payment` });
+    ms.push({ num: ms.length + 1, title: 'Pay Off: ' + td.name, desc: `${td.rate}% p.a. Clears ${fmt(td.emi)}/mo EMI upon payoff.`, when: !py.converged ? '≥40 years' : py.months + ' months', amount: fmt(td.balance), type: 'debt', urgency: 'medium', action: `Add ${fmt(N('s-xp'))}/mo extra payment` });
   }
   if (S.sips.length) {
     const fv = S.sips.reduce((s, x) => s + sipFV(x.curval || 0, x.amt, x.plan, x.ret), 0);
     ms.push({ num: ms.length + 1, title: 'SIP Wealth Target', desc: `Portfolio projected to reach ${fmt(fv)}.`, when: 'Ongoing', amount: fmt(fv), type: 'invest', urgency: 'low', action: 'Never break SIPs — compounding needs time' });
   }
   if (emi.length) {
-    const py = calcPayoff(S.debts, N('s-xp'));
-    ms.push({ num: ms.length + 1, title: '🎉 Debt-Free Day', desc: `All EMIs cleared. Freeing ${fmt(emi.reduce((s, d) => s + d.emi, 0))}/mo for investments.`, when: py.months + ' months', amount: fmt(emi.reduce((s, d) => s + d.balance, 0)), type: 'freedom', urgency: 'medium', action: 'Redirect all freed EMIs to index funds' });
+    const py2 = calcPayoff(S.debts, N('s-xp'));
+    ms.push({ num: ms.length + 1, title: '🎉 Debt-Free Day', desc: `All EMIs cleared. Freeing ${fmt(emi.reduce((s, d) => s + d.emi, 0))}/mo for investments.`, when: !py2.converged ? '≥40 years' : py2.months + ' months', amount: fmt(emi.reduce((s, d) => s + d.balance, 0)), type: 'freedom', urgency: 'medium', action: 'Redirect all freed EMIs to index funds' });
   }
   renderMs(ms);
 }

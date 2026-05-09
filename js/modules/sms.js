@@ -274,7 +274,16 @@ export function smsImportOne(i) {
   const catId = document.getElementById(`sms-cat-${i}`)?.value || _guessCategory(p.merchant);
   const note = document.getElementById(`sms-note-${i}`)?.value?.trim() || p.merchant;
 
-  S.dailyExps.push({ id: 'de' + Date.now() + i, date, catId, amt, note });
+  const key = `${date}|${amt}|${(note || '').toLowerCase().trim()}`;
+  const seen = new Set(S.dailyExps.map(e => `${e.date}|${e.amt}|${(e.note || '').toLowerCase().trim()}`));
+  if (seen.has(key)) {
+    _pending.splice(i, 1);
+    _smsMsg('Duplicate — already imported.', 'warn');
+    renderSMS();
+    return;
+  }
+  const id = 'de_' + (crypto.randomUUID?.() || Date.now() + '_' + Math.random().toString(36).slice(2, 8));
+  S.dailyExps.push({ id, date, catId, amt, note });
   sv();
   _rcFn();
 
@@ -285,13 +294,18 @@ export function smsImportOne(i) {
 
 export function smsImportAll() {
   let count = 0;
+  const seen = new Set(S.dailyExps.map(e => `${e.date}|${e.amt}|${(e.note || '').toLowerCase().trim()}`));
   _pending.forEach((p, i) => {
     const amt  = parseFloat(document.getElementById(`sms-amt-${i}`)?.value) || p.amt;
     const date = document.getElementById(`sms-date-${i}`)?.value || p.date;
     const catId = document.getElementById(`sms-cat-${i}`)?.value || _guessCategory(p.merchant);
     const note = document.getElementById(`sms-note-${i}`)?.value?.trim() || p.merchant;
     if (amt > 0) {
-      S.dailyExps.push({ id: 'de' + Date.now() + i, date, catId, amt, note });
+      const key = `${date}|${amt}|${(note || '').toLowerCase().trim()}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const id = 'de_' + (crypto.randomUUID?.() || Date.now() + '_' + Math.random().toString(36).slice(2, 8));
+      S.dailyExps.push({ id, date, catId, amt, note });
       count++;
     }
   });

@@ -11,6 +11,8 @@ export let S = {
   debts: [], sips: [], expSecs: [], custSecs: [],
   dailyExps: [], dailyCats: [],
   chatHist: [], strat: 'avalanche', theme: 'dark',
+  inflation: 5, showRealFV: false,
+  taxRegime: 'new', taxSlab: 30,
   householdId: null, userId: null, members: [],
 };
 
@@ -81,6 +83,8 @@ export function sv() {
       debts: S.debts, sips: S.sips, expSecs: S.expSecs, custSecs: S.custSecs,
       dailyExps: S.dailyExps, dailyCats: S.dailyCats,
       strat: S.strat, theme: S.theme, chatHist: S.chatHist.slice(-20),
+      inflation: S.inflation, showRealFV: S.showRealFV,
+      taxRegime: S.taxRegime, taxSlab: S.taxSlab,
       householdId: S.householdId,
     };
     // Also push to Firestore if signed in + in a household
@@ -113,6 +117,8 @@ export function applyFromData(d, applyThemeFn) {
   S.expSecs = d.expSecs || []; S.custSecs = d.custSecs || [];
   S.dailyExps = d.dailyExps || []; S.dailyCats = d.dailyCats || [];
   S.strat = d.strat || 'avalanche'; S.chatHist = d.chatHist || [];
+  S.inflation = d.inflation ?? 5; S.showRealFV = d.showRealFV ?? false;
+  S.taxRegime = d.taxRegime || 'new'; S.taxSlab = d.taxSlab ?? 30;
   S.householdId = d.householdId || null;
   if (d.theme) { S.theme = d.theme; applyThemeFn(d.theme); }
 }
@@ -156,9 +162,9 @@ export function getTotalExp() {
 }
 
 export function calcPayoff(debts, extra) {
-  if (!debts.length) return { results: [], months: 0, totalInt: 0 };
+  if (!debts.length) return { results: [], months: 0, totalInt: 0, converged: true };
   const eds = debts.filter(d => d.repay === 'emi' || !d.repay);
-  if (!eds.length) return { results: [], months: 0, totalInt: 0 };
+  if (!eds.length) return { results: [], months: 0, totalInt: 0, converged: true };
   let bals = eds.map(d => ({ ...d, bal: d.balance }));
   let sorted = S.strat === 'avalanche' ? [...bals].sort((a, b) => b.rate - a.rate) : [...bals].sort((a, b) => a.bal - b.bal);
   let months = 0, results = [], totalInt = 0, remaining = [...sorted];
@@ -167,12 +173,13 @@ export function calcPayoff(debts, extra) {
     remaining.forEach(d => { const i = d.bal * (d.rate / 100 / 12); totalInt += i; d.bal += i; });
     remaining.forEach(d => { if (d.emi > 0) d.bal -= Math.min(d.emi, d.bal); });
     if (remaining.length && extra > 0) { const t = remaining[0]; t.bal -= Math.min(extra, t.bal); }
-    remaining = remaining.filter(d => { if (d.bal <= 1) { results.push({ ...d, month: months }); return false; } return true; });
+    remaining = remaining.filter(d => { if (d.bal <= 0.5) { results.push({ ...d, month: months }); return false; } return true; });
   }
-  return { results, months, totalInt };
+  return { results, months, totalInt, converged: !remaining.length };
 }
 
 export function sipFV(cv, mo, mo2, ret) {
   const r = ret / 100 / 12;
+  if (r === 0) return cv + mo * mo2;
   return cv * Math.pow(1 + r, mo2) + mo * (Math.pow(1 + r, mo2) - 1) / r;
 }

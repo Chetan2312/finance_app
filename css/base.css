@@ -2,7 +2,7 @@
    BASE
 ═══════════════════════════════ */
 *{box-sizing:border-box;margin:0;padding:0}
-html{font-size:15px;scroll-behavior:smooth}
+html{font-size:16px;scroll-behavior:smooth}
 body{background:var(--bg);color:var(--t1);font-family:var(--fb);min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s}
 ::selection{background:rgba(124,115,230,.35);color:var(--t1)}
 ::-webkit-scrollbar{width:4px;height:4px}
@@ -36,3 +36,11 @@ body{background:var(--bg);color:var(--t1);font-family:var(--fb);min-height:100vh
 .div{height:1px;background:var(--b1);margin:.7rem 0}
 .empty{text-align:center;padding:2rem;color:var(--t3);font-size:.8rem}
 .empty-ic{font-size:1.8rem;display:block;margin-bottom:.4rem}
+
+/* Accessibility */
+:focus-visible{outline:2px solid var(--p);outline-offset:2px;border-radius:var(--rm)}
+button:focus:not(:focus-visible){outline:none}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}

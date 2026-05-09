@@ -44,19 +44,24 @@ function buildSteps(surplus, totalDebt, ioDebt, sipMonthly, savings) {
   const steps = [];
   const inc   = N('s-inc') + N('s-xi');
 
-  const efTarget = Math.round(inc * 3);
+  const { total: exp } = getTotalExp();
+  const efTarget = Math.round(exp * 6);
   const efShort  = Math.max(0, efTarget - savings);
   if (efShort > 0) {
     const monthly = Math.round(Math.min(efShort * 0.35, surplus * 0.5) / 500) * 500 || 2000;
-    steps.push({ num:1, title:'Build a 3-month emergency fund first', desc:`Target: ₹${(efTarget/100000).toFixed(1)}L (3× income). Short by ₹${Math.round(efShort/1000)}K. Park in HDFC Short Duration Fund — earns ~7.5%, redeems next day.`, action:`₹${monthly.toLocaleString('en-IN')}/mo → HDFC Short Duration Fund until full`, amount:`₹${monthly.toLocaleString('en-IN')}/mo` });
+    steps.push({ num:1, title:'Build a 6-month emergency fund first', desc:`Target: ₹${(efTarget/100000).toFixed(1)}L (6× monthly expenses). Short by ₹${Math.round(efShort/1000)}K. Park in HDFC Short Duration Fund — earns ~7.5%, redeems next day.`, action:`₹${monthly.toLocaleString('en-IN')}/mo → HDFC Short Duration Fund until full`, amount:`₹${monthly.toLocaleString('en-IN')}/mo` });
   }
 
   if (ioDebt > 0) {
-    steps.push({ num:steps.length+1, title:'Close interest-only loans urgently', desc:`₹${Math.round(ioDebt/100000*10)/10}L in IO/bullet loans eat cash without reducing principal. Closing them is a guaranteed 12–18% risk-free return.`, action:'Redirect all spare income toward these until fully closed', amount:`₹${Math.round(ioDebt/100000*10)/10}L outstanding` });
+    const ioMaxRate = Math.max(...S.debts.filter(d => d.repay === 'interest' || d.repay === 'bullet').map(d => d.rate), 0);
+    steps.push({ num:steps.length+1, title:'Close interest-only loans urgently', desc:`₹${Math.round(ioDebt/100000*10)/10}L in IO/bullet loans eat cash without reducing principal. Closing them is a guaranteed ${ioMaxRate}% risk-free return.`, action:'Redirect all spare income toward these until fully closed', amount:`₹${Math.round(ioDebt/100000*10)/10}L outstanding` });
   }
 
-  if (sipMonthly < 12500) {
-    steps.push({ num:steps.length+1, title:'Maximise Section 80C with ELSS', desc:'₹1.5L/year (₹12,500/mo) in ELSS saves ₹46,800 in tax (30% slab). 3-year lock-in. Quant ELSS for aggression; Mirae ELSS for stability.', action:'Start ₹12,500/mo SIP in an ELSS fund before March 31', amount:'₹12,500/mo (₹1.5L/yr)' });
+  if (S.taxRegime === 'old' && sipMonthly < 12500) {
+    const taxSaved = Math.round(150000 * (S.taxSlab / 100)).toLocaleString('en-IN');
+    steps.push({ num:steps.length+1, title:'Maximise Section 80C with ELSS', desc:`₹1.5L/year (₹12,500/mo) in ELSS saves ₹${taxSaved} in tax (${S.taxSlab}% slab, old regime). 3-year lock-in. Quant ELSS for aggression; Mirae ELSS for stability.`, action:'Start ₹12,500/mo SIP in an ELSS fund before March 31', amount:'₹12,500/mo (₹1.5L/yr)' });
+  } else if (S.taxRegime === 'new' && sipMonthly < 12500) {
+    steps.push({ num:steps.length+1, title:'New regime selected — focus core SIP', desc:'Section 80C deductions (ELSS, PPF, LIC) do not apply under the new tax regime. Skip ELSS and direct the full ₹12,500/mo into a diversified equity SIP instead.', action:'Start ₹12,500/mo SIP in UTI Nifty 50 + PPFAS Flexi Cap', amount:'₹12,500/mo' });
   }
 
   if (surplus > 5000 || sipMonthly > 0) {
@@ -137,6 +142,7 @@ function renderFunds(funds) {
       </div>
       <div class="rdots" style="margin-top:.5rem">${dots}</div>
       <div class="xxs c-muted" style="margin-top:.38rem;line-height:1.55">${f.reason}</div>
+      <div class="xxs c-muted" style="margin-top:.3rem;font-style:italic;opacity:.7">Past performance does not indicate future returns.</div>
     </div>`;
   }).join('');
 }

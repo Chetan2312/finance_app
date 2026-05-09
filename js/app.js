@@ -11,7 +11,7 @@ import { exportData, importData } from './storage.js';
 import { openMo, cmo, initModalListeners, pickEm } from './modules/modals.js';
 import { renderExp, togSec, openSecModal, saveSection, rmCustSec, openItemModal, saveItem, rmExpItem, setRcFn as setExpRc } from './modules/expenses.js';
 import { renderDebts, upRepHint, openDebtModal, saveDebt, rmDebt, setSt, setRcFn as setDebtRc } from './modules/debts.js';
-import { renderSIPs, sipSummary, openSIPModal, saveSIP, rmSIP, setRcFn as setSipRc } from './modules/sips.js';
+import { renderSIPs, sipSummary, openSIPModal, saveSIP, rmSIP, toggleRealFV, setRcFn as setSipRc } from './modules/sips.js';
 import { renderDex, renderDexStats, renderCatMgr, renderDexSelects, buildMonthFilter, clearDexFilter, addDex, openDexEdit, saveDexEdit, rmDex, openDCatModal, saveDCat, rmDCat, setRcFn as setDailyRc } from './modules/daily.js';
 
 // ── Phase 4 modules ──
@@ -31,6 +31,9 @@ import { sq, sendMsg, toggleApiKeyPanel, applyApiKey, clearApiKeyUI } from './mo
 // ── SMS import ──
 import { parseSMS, renderSMS, smsPaste, smsFromClipboard, smsImportOne, smsImportAll, smsDismiss, setRcFn as setSmsRc } from './modules/sms.js';
 
+// ── Retirement ──
+import { genRetirement, initRetirementListeners } from './modules/retirement.js';
+
 // ── v8 modules ──
 import { initAuth, setAuthCallbacks, setAuthRcFn, showAuthModal } from './modules/auth.js';
 import { renderHousehold, initHouseholdWindowBindings, setRcFn as setHhRc } from './modules/household.js';
@@ -43,10 +46,11 @@ function sw(t, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
   el.classList.add('on');
   document.getElementById('pg-' + t).classList.add('on');
-  if (t === 'invest')    loadInvest();
-  if (t === 'sms')       renderSMS();
-  if (t === 'household') renderHousehold();
+  if (t === 'invest')     loadInvest();
+  if (t === 'sms')        renderSMS();
+  if (t === 'household')  renderHousehold();
   if (t === 'milestones') genMilestones();
+  if (t === 'retirement') genRetirement();
   if (t === 'sip') renderSIPs();
   if (t === 'daily') { buildMonthFilter(); renderDex(); }
   if (t === 'reports') {
@@ -73,6 +77,18 @@ function renderAll() {
   document.getElementById('st-sn').classList.toggle('on', S.strat === 'snowball');
 }
 
+// ── Tax regime helpers ──
+function setTaxRegime(v) {
+  S.taxRegime = v;
+  const slabWrap = document.getElementById('s-tax-slab-wrap');
+  if (slabWrap) slabWrap.style.display = v === 'old' ? '' : 'none';
+  sv(); loadInvest();
+}
+function setTaxSlab(v) {
+  S.taxSlab = parseInt(v) || 30;
+  sv(); loadInvest();
+}
+
 // ══════════════════════════════════════
 // INIT
 // ══════════════════════════════════════
@@ -95,9 +111,20 @@ async function init() {
   // Render all
   renderAll();
   document.getElementById('de-qdt').value = today();
+
+  // Sync tax regime UI with restored state
+  const taxRegimeEl = document.getElementById('s-tax-regime');
+  if (taxRegimeEl) taxRegimeEl.value = S.taxRegime || 'new';
+  const taxSlabEl = document.getElementById('s-tax-slab');
+  if (taxSlabEl) taxSlabEl.value = String(S.taxSlab || 30);
+  const slabWrap = document.getElementById('s-tax-slab-wrap');
+  if (slabWrap) slabWrap.style.display = (S.taxRegime === 'old') ? '' : 'none';
   document.addEventListener('input', e => {
     if (['s-inc', 's-xi', 's-sav', 's-xp'].includes(e.target.id)) { sv(); rc(); }
   });
+
+  // Retirement listeners
+  initRetirementListeners();
 
   // v8: household + auth
   initHouseholdWindowBindings();
@@ -128,7 +155,7 @@ Object.assign(window, {
   // Debts
   upRepHint, openDebtModal, saveDebt, rmDebt, setSt,
   // SIPs
-  openSIPModal, saveSIP, rmSIP,
+  openSIPModal, saveSIP, rmSIP, toggleRealFV,
   // Daily
   openDCatModal, saveDCat, rmDCat, addDex, openDexEdit, saveDexEdit, rmDex, clearDexFilter, renderDex,
   // Reports
@@ -139,6 +166,8 @@ Object.assign(window, {
   sq, sendMsg, toggleApiKeyPanel, applyApiKey, clearApiKeyUI,
   // Milestones
   genMilestones,
+  // Retirement
+  genRetirement,
   // Modals
   openMo, cmo, pickEm,
   // Navigation
@@ -148,6 +177,8 @@ Object.assign(window, {
   // Auth + Household
   showAuthModal,
   renderHousehold,
+  // Tax regime
+  setTaxRegime, setTaxSlab,
   // Core
   sv, rc,
   // Data export/import (Phase 8)

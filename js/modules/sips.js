@@ -1,8 +1,8 @@
 // ══════════════════════════════════════
 // SIPs — SIP cards, CRUD, chart, summary
 // ══════════════════════════════════════
-import { fmt } from '../utils.js';
-import { COLS, RISK_LVL, CAT_ICO } from '../../data/defaults.js';
+import { fmt, sipXIRR, postTaxFV } from '../utils.js';
+import { COLS, RISK_LVL, CAT_ICO, TAX_KIND } from '../../data/defaults.js';
 import { S, charts, sv, sipFV } from '../state.js';
 import { openMo, cmo } from './modals.js';
 
@@ -37,33 +37,57 @@ export function rmSIP(id) {
   S.sips = S.sips.filter(s => s.id !== id); sv(); renderSIPs(); rcFn();
 }
 
+export function toggleRealFV() {
+  S.showRealFV = !S.showRealFV;
+  sv();
+  renderSIPs();
+}
+
 export function renderSIPs() {
   sipSummary();
   const el = document.getElementById('sip-list');
   if (!S.sips.length) { el.innerHTML = '<div class="empty"><span class="empty-ic">📈</span>No SIPs yet.</div>'; return; }
   el.innerHTML = S.sips.map(sip => {
     const fv = sipFV(sip.curval || 0, sip.amt, sip.plan, sip.ret);
+    const realFV = fv / Math.pow(1 + S.inflation / 100, sip.plan / 12);
+    const displayFV = S.showRealFV ? realFV : fv;
     const fi = (sip.invested || 0) + sip.amt * sip.plan;
-    const fg = fv - fi;
+    const fg = displayFV - fi;
     const g = (sip.curval || 0) - (sip.invested || 0);
     const gp = sip.invested > 0 ? g / sip.invested * 100 : 0;
+    const xirrVal = sipXIRR(sip);
+    const xirrTxt = xirrVal !== null ? (xirrVal * 100).toFixed(1) + '%' : '—';
+    const taxKind = TAX_KIND[sip.cat] || 'equity';
+    const totalInvested = (sip.invested || 0) + sip.amt * sip.plan;
+    const postTax = postTaxFV(displayFV, totalInvested, taxKind, sip.plan / 12, S.taxSlab);
     const rl = RISK_LVL[sip.cat] || 3;
     const dots = Array.from({ length: 5 }, (_, i) => `<span class="rdot ${i < rl ? 'on ' + (rl > 3 ? 'h' : rl > 2 ? 'm' : '') : ''}"></span>`).join('');
+    const projLabel = S.showRealFV ? `Real (${S.inflation}% inf.)` : 'Projected';
     return `<div class="sipcard"><div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.65rem"><div style="width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.88rem;background:${sip.color}15;color:${sip.color};flex-shrink:0">${CAT_ICO[sip.cat] || '📈'}</div><div style="flex:1"><div class="fw7" style="font-size:.85rem;font-family:var(--fd);letter-spacing:-.01em">${sip.name}</div><div class="xxs c-muted">${sip.cat?.toUpperCase()} · ${sip.ret}% p.a.</div></div><div class="rdots">${dots}</div><button class="btn bg bsm" onclick="openSIPModal('${sip.id}')">✏️</button><button class="btn bd bsm" onclick="rmSIP('${sip.id}')">✕</button></div>
   <div class="sip-sts"><div class="sip-st"><div class="sip-stl">Monthly</div><div class="sip-stv c-p">${fmt(sip.amt)}</div></div><div class="sip-st"><div class="sip-stl">Months Done</div><div class="sip-stv">${sip.done || 0}</div></div><div class="sip-st"><div class="sip-stl">Invested</div><div class="sip-stv">${fmt(sip.invested || 0)}</div></div><div class="sip-st"><div class="sip-stl">Value</div><div class="sip-stv c-ok">${fmt(sip.curval || 0)}</div></div></div>
-  <div class="sip-sts mt05"><div class="sip-st"><div class="sip-stl">Gain</div><div class="sip-stv" style="color:${g >= 0 ? 'var(--lime)' : 'var(--danger)'}">${g >= 0 ? '+' : ''}${fmt(g)}</div></div><div class="sip-st"><div class="sip-stl">Gain%</div><div class="sip-stv" style="color:${gp >= 0 ? 'var(--amber)' : 'var(--danger)'}">${gp.toFixed(1)}%</div></div><div class="sip-st"><div class="sip-stl">Plan</div><div class="sip-stv c-sky">${sip.plan}mo</div></div><div class="sip-st"><div class="sip-stl">Projected</div><div class="sip-stv c-warn">${fmt(fv)}</div></div></div>
-  <div style="background:var(--bg2);border:1.5px solid var(--b1);border-radius:var(--rm);padding:.55rem;margin-top:.55rem"><div class="flex jb xxs c-muted"><span>Projection over ${sip.plan}mo</span><span class="c-warn">${fmt(fv)}</span></div><div class="sip-proj-bar mt05"><div class="spi" style="width:${Math.min(95, fi / fv * 100).toFixed(1)}%"></div><div class="spg" style="width:${Math.min(95, Math.max(0, fg / fv * 100)).toFixed(1)}%"></div></div><div class="flex jb" style="font-size:.58rem;color:var(--t3)"><span>■ Invested: ${fmt(fi)}</span><span>■ Gains: ${fmt(Math.max(0, fg))}</span></div></div></div>`;
+  <div class="sip-sts mt05"><div class="sip-st"><div class="sip-stl">Gain</div><div class="sip-stv" style="color:${g >= 0 ? 'var(--lime)' : 'var(--danger)'}">${g >= 0 ? '+' : ''}${fmt(g)}</div></div><div class="sip-st"><div class="sip-stl">XIRR</div><div class="sip-stv" style="color:${xirrVal !== null && xirrVal >= 0 ? 'var(--amber)' : 'var(--danger)'}" title="Approx. annualised return from SIP contributions">${xirrTxt}</div></div><div class="sip-st"><div class="sip-stl">Plan</div><div class="sip-stv c-sky">${sip.plan}mo</div></div><div class="sip-st"><div class="sip-stl">${projLabel}</div><div class="sip-stv c-warn">${fmt(displayFV)}</div></div></div>
+  <div style="background:var(--bg2);border:1.5px solid var(--b1);border-radius:var(--rm);padding:.55rem;margin-top:.55rem"><div class="flex jb xxs c-muted"><span>Projection over ${sip.plan}mo</span><span class="c-warn">${fmt(displayFV)}</span></div><div class="sip-proj-bar mt05"><div class="spi" style="width:${Math.min(95, fi / displayFV * 100).toFixed(1)}%"></div><div class="spg" style="width:${Math.min(95, Math.max(0, fg / displayFV * 100)).toFixed(1)}%"></div></div><div class="flex jb" style="font-size:.58rem;color:var(--t3)"><span>■ Invested: ${fmt(fi)}</span><span>■ Gains: ${fmt(Math.max(0, fg))}</span></div><div class="flex jb xxs" style="margin-top:.35rem;padding-top:.3rem;border-top:1px solid var(--b1)"><span class="c-muted">Post-tax (${taxKind})</span><span style="color:var(--lime)">${fmt(postTax)}</span></div></div></div>`;
   }).join('');
   sipChart();
 }
 
 export function sipSummary() {
   const ti = S.sips.reduce((s, x) => s + (x.invested || 0), 0), tv = S.sips.reduce((s, x) => s + (x.curval || 0), 0), tg = tv - ti, tp = ti > 0 ? tg / ti * 100 : 0;
-  const fv = S.sips.reduce((s, x) => s + sipFV(x.curval || 0, x.amt, x.plan, x.ret), 0);
+  const nomFV = S.sips.reduce((s, x) => s + sipFV(x.curval || 0, x.amt, x.plan, x.ret), 0);
+  const maxPlan = Math.max(0, ...S.sips.map(x => x.plan));
+  const realFV = S.sips.reduce((s, x) => s + sipFV(x.curval || 0, x.amt, x.plan, x.ret) / Math.pow(1 + S.inflation / 100, x.plan / 12), 0);
+  const displayFV = S.showRealFV ? realFV : nomFV;
   document.getElementById('sip-ti').textContent = fmt(ti); document.getElementById('sip-tv').textContent = fmt(tv);
   document.getElementById('sip-tg').textContent = (tg >= 0 ? '+' : '') + fmt(tg); document.getElementById('sip-tp').textContent = tp.toFixed(1) + '%';
-  document.getElementById('sip-proj').textContent = fmt(fv);
-  document.getElementById('sip-projd').textContent = `Across ${S.sips.length} SIP${S.sips.length !== 1 ? 's' : ''}, next ${Math.max(0, ...S.sips.map(x => x.plan))}mo`;
+  document.getElementById('sip-proj').textContent = fmt(displayFV);
+  document.getElementById('sip-projd').textContent = `Across ${S.sips.length} SIP${S.sips.length !== 1 ? 's' : ''}, next ${maxPlan}mo`;
+  const toggleBtn = document.getElementById('inflation-toggle');
+  if (toggleBtn) toggleBtn.textContent = S.showRealFV ? `Real (${S.inflation}% inf.)` : 'Nominal';
+  const realNote = document.getElementById('sip-real-note');
+  if (realNote) {
+    realNote.style.display = S.showRealFV ? '' : 'none';
+    realNote.textContent = `Inflation-adjusted at ${S.inflation}% p.a. Nominal: ${fmt(nomFV)}`;
+  }
   document.getElementById('ov-sipv').textContent = fmt(tv); document.getElementById('ov-sips').textContent = S.sips.length + ' SIP' + (S.sips.length !== 1 ? 's' : '');
 }
 

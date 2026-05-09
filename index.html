@@ -198,6 +198,7 @@
   <button class="ntab"    onclick="sw('sip',this)">📈 SIPs</button>
   <button class="ntab"    onclick="sw('invest',this)">💰 Invest</button>
   <button class="ntab"    onclick="sw('daily',this)">🗓 Daily</button>
+  <button class="ntab"    onclick="sw('retirement',this)">🏖️ Retire</button>
   <button class="ntab"    onclick="sw('milestones',this)">🎯 Milestones</button>
   <button class="ntab"    onclick="sw('budget',this)">🧮 Budget</button>
   <button class="ntab"    onclick="sw('reports',this)">📋 Reports</button>
@@ -228,6 +229,10 @@
       <div class="sh"><div class="shdot"></div>Setup</div>
       <div class="g2"><div class="fi"><label>Monthly Income (₹)</label><input type="number" id="s-inc" placeholder="90000" oninput="sv();rc()"></div><div class="fi"><label>Extra Income/Freelance (₹/mo)</label><input type="number" id="s-xi" placeholder="0" oninput="sv();rc()"></div></div>
       <div class="g2"><div class="fi"><label>Emergency Fund/Savings (₹)</label><input type="number" id="s-sav" placeholder="60000" oninput="sv();rc()"></div><div class="fi"><label>Extra Debt Payment (₹/mo)</label><input type="number" id="s-xp" placeholder="5000" oninput="sv();rc()"></div></div>
+      <div class="g2">
+        <div class="fi"><label>Tax Regime</label><select id="s-tax-regime" onchange="setTaxRegime(this.value)"><option value="new">New Regime (default FY 2024+)</option><option value="old">Old Regime (80C deductions)</option></select></div>
+        <div class="fi" id="s-tax-slab-wrap"><label>Income Tax Slab (old regime)</label><select id="s-tax-slab" onchange="setTaxSlab(this.value)"><option value="5">5%</option><option value="10">10%</option><option value="15">15%</option><option value="20">20%</option><option value="30" selected>30%</option></select></div>
+      </div>
       <div class="ib">💡 <strong>Expenses tab</strong> for fixed costs · <strong>Daily tab</strong> for day-to-day · <strong>Debts tab</strong> auto-links EMIs · <strong>Reports tab</strong> for PDF reports</div>
     </div>
     <div class="card">
@@ -265,7 +270,11 @@
   <div class="g2 mb1">
     <div class="card"><div class="sh"><div class="shdot" style="background:var(--sky)"></div>Portfolio Summary</div>
       <div class="g2 mb1"><div><div class="kl">Invested</div><div style="font-family:var(--fd);font-size:1.2rem;font-weight:900" id="sip-ti">₹0</div></div><div><div class="kl">Current Value</div><div style="font-family:var(--fd);font-size:1.2rem;font-weight:900;color:var(--ok)" id="sip-tv">₹0</div></div><div><div class="kl">Gains</div><div style="font-family:var(--fd);font-size:1.2rem;font-weight:900;color:var(--lime)" id="sip-tg">₹0</div></div><div><div class="kl">Gain %</div><div style="font-family:var(--fd);font-size:1.2rem;font-weight:900;color:var(--amber)" id="sip-tp">0%</div></div></div>
-      <div class="div"></div><div class="kl">Total Projected</div><div style="font-family:var(--fd);font-size:1.5rem;font-weight:900;color:var(--sky)" id="sip-proj">₹0</div><div class="xxs c-muted mt05" id="sip-projd">Add SIPs to see projection</div>
+      <div class="div"></div>
+      <div class="flex jb ac mt05"><div class="kl" style="margin-bottom:0">Total Projected</div><button class="btn bg bxs xxs" id="inflation-toggle" onclick="toggleRealFV()" title="Toggle real vs nominal value">Nominal</button></div>
+      <div style="font-family:var(--fd);font-size:1.5rem;font-weight:900;color:var(--sky)" id="sip-proj">₹0</div>
+      <div class="xxs c-muted mt05" id="sip-projd">Add SIPs to see projection</div>
+      <div class="xxs c-muted mt05" id="sip-real-note" style="display:none"></div>
     </div>
     <div class="card"><div class="sh"><div class="shdot" style="background:var(--lime)"></div>Growth Chart</div><canvas id="sip-chart" style="max-height:200px"></canvas></div>
   </div>
@@ -346,6 +355,29 @@
     </div>
     <div id="dex-list"><div class="empty"><span class="empty-ic">🗓</span>No daily expenses yet. Use Quick Add above.</div></div>
   </div>
+</div>
+
+<!-- ════ RETIREMENT ════ -->
+<div id="pg-retirement" class="page">
+  <div class="card mb1">
+    <div class="sh"><div class="shdot" style="background:var(--amber)"></div>Retirement Planner</div>
+    <div class="g2">
+      <div class="g2">
+        <div class="fi"><label>Current Age</label><input type="number" id="ret-cur-age" placeholder="30" min="18" max="80"></div>
+        <div class="fi"><label>Retire At Age</label><input type="number" id="ret-retire-age" placeholder="55" min="30" max="80"></div>
+        <div class="fi"><label>Monthly Expenses Today (₹)</label><input type="number" id="ret-exp" placeholder="50000"></div>
+        <div class="fi"><label>Current Retirement Corpus (₹)</label><input type="number" id="ret-corpus" placeholder="0"></div>
+      </div>
+      <div class="g2">
+        <div class="fi"><label>Expected Inflation (% p.a.)</label><input type="number" id="ret-inf" placeholder="5" step="0.5"></div>
+        <div class="fi"><label>Pre-Retirement Return (% p.a.)</label><input type="number" id="ret-pre" placeholder="12" step="0.5"></div>
+        <div class="fi"><label>Post-Retirement Return (% p.a.)</label><input type="number" id="ret-post" placeholder="7" step="0.5"></div>
+        <div class="fi"><label>Safe Withdrawal Rate (%)</label><input type="number" id="ret-swr" placeholder="4" step="0.5"></div>
+      </div>
+    </div>
+    <button class="btn bp mt1" style="width:100%" onclick="genRetirement()">Calculate Retirement Plan</button>
+  </div>
+  <div id="ret-output"></div>
 </div>
 
 <!-- ════ MILESTONES ════ -->

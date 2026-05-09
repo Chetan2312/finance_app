@@ -157,7 +157,7 @@ export function genMonthlyReport(btn) {
   // Debts
   const totalDebt = S.debts.reduce((s, d) => s + d.balance, 0);
   const emiTotal  = S.debts.reduce((s, d) => s + d.emi, 0);
-  const { months: payoffMonths } = calcPayoff(S.debts, xp);
+  const { months: payoffMonths, converged: payoffConverged } = calcPayoff(S.debts, xp);
 
   // SIPs
   const sipMonthly  = S.sips.reduce((s, x) => s + x.amt, 0);
@@ -174,7 +174,7 @@ export function genMonthlyReport(btn) {
     .slice(0, 8);
 
   // Savings rate
-  const savRate = totInc > 0 ? Math.max(0, surp / totInc * 100).toFixed(1) : '0.0';
+  const savRate = totInc > 0 ? (surp / totInc * 100).toFixed(1) : '0.0';
   const savCol  = surp >= 0 ? 'var(--ok)' : 'var(--danger)';
 
   // Fixed expense breakdown
@@ -280,7 +280,7 @@ export function genMonthlyReport(btn) {
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.6rem">
           <div style="text-align:center"><div style="font-size:.6rem;color:var(--t3);text-transform:uppercase">Total Outstanding</div><div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--danger)">${fmt(totalDebt)}</div></div>
           <div style="text-align:center"><div style="font-size:.6rem;color:var(--t3);text-transform:uppercase">Monthly EMI</div><div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--rose)">${fmt(emiTotal)}</div></div>
-          <div style="text-align:center"><div style="font-size:.6rem;color:var(--t3);text-transform:uppercase">Debt-Free In</div><div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--amber)">${payoffMonths > 0 ? payoffMonths + ' mo' : 'N/A'}</div></div>
+          <div style="text-align:center"><div style="font-size:.6rem;color:var(--t3);text-transform:uppercase">Debt-Free In</div><div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--amber)">${!payoffConverged ? '≥40 yrs' : payoffMonths > 0 ? payoffMonths + ' mo' : 'N/A'}</div></div>
         </div>
         ${S.debts.map(d => `<div style="display:flex;justify-content:space-between;align-items:center;padding:.3rem 0;border-top:1px solid var(--b1);font-size:.72rem"><span style="color:var(--t2)">${d.name}</span><span style="font-family:'JetBrains Mono',monospace;color:var(--danger)">${fmt(d.balance)} <span style="color:var(--t3);font-size:.62rem">@ ${d.rate}%</span></span></div>`).join('')}
       </div>` : ''}
